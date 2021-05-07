@@ -60,7 +60,7 @@ public:
 	
 
 	CFlighter(int type);
-
+	CFlighter* next;
 	void setShader(mat4& mxModelView, mat4& mxProjection, int type, GLuint uiShaderHandle = MAX_UNSIGNED_INT);
 	GLuint getShaderHandle() { return _uiProgram; }
 	void setViewMatrix(mat4& mat);

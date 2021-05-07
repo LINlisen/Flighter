@@ -15,6 +15,7 @@ typedef Angel::vec4  point4;
 #define ENEMY_TWO_RADIUS 1.6
 #define VP_HALFWIDTH  12.0f
 #define ATTACK_NUM 10
+#define BOSS_NUM 1000
 class Enemy : public CShape
 {
 private:
@@ -22,6 +23,8 @@ private:
 public:
 	Enemy(int type);
 	CFlighter* g_Attack[ATTACK_NUM];
+	CFlighter* BossAttack[ATTACK_NUM];
+	CFlighter* Current;
 	float g_fAttack[ATTACK_NUM][3] = { 0 };
 	float g_fAttackDir[ATTACK_NUM] = { 0 };
 	float g_AttackInitPos[ATTACK_NUM][3] = { 0 };

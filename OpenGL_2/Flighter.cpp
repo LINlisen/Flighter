@@ -56,6 +56,7 @@ int _iNext = 0;
 float _fShootTime = 0;
 float _fShootSpeed = 5;
 float _fShootDur = 0.5f;
+bool _bMissileSus[20] = { false };
 //for cloud
 CBackGround* g_Cloud[4];
 float g_fCloud[4][3];
@@ -102,6 +103,19 @@ float EnemyTime_T = 0.0f;
 bool _bEnemyGen_T[5] = { false };
 bool _bEnemyDel_T[5] = { false };
 bool _bSetTrace[5][5] = { false };
+//Boss
+Enemy* g_Boss[9];
+int _iBossType = 1;
+int _iBeAttackCount;
+float g_fBoss[9][3];
+float g_fGenBossClock;
+float g_fScaleClock;
+float g_fFirstDiedPos[2];
+float g_fSecondDiedPos[2];
+bool _bBossGen = false;
+bool _bBossOpen = false;
+bool _bFirstDied = false;
+bool _bSecondDied = false;
 //for 3-2
 CFlighter* g_UpgradeOne[2];
 CFlighter* g_UpgradeTwo;
@@ -114,6 +128,8 @@ float _fColdClock = 0;
 float _fGearAngle = 0;
 float _fTraceClock = 0;
 float _fTraceCold = 0;
+float _fTraceDir[2];
+float _fTraceCount;
 bool _bUpgrade[3] = { false };
 bool _bUseGear = false;
 bool _bGearCold = false;
@@ -145,6 +161,7 @@ GLfloat g_fTx = 0, g_fTy = 0;
 extern void IdleProcess();
 void CreateQuadRelationship(); //1-1
 void ProtectRotation(float); //1-2
+void TraceAttack(float);
 void Shoot(float); //1-3 1-4
 void CloudMove(float); //1-5
 void EatChange_Generate(int);//3-2
@@ -155,6 +172,7 @@ void Attack(float,int,Enemy*,int);
 float getRandomf(float _max, float _min); //get romdon float
 int getRandomi(int _max, int _min);
 void BeAttack(float);
+void BossMove(float,int);
 void init(void)
 {
 	//  產生 projection 矩陣，此處為產生正投影矩陣
@@ -247,13 +265,42 @@ void GL_Display(void)
 			}
 		}
 	}
+	if (_bBossGen) {
+		g_Boss[0]->draw();
+		if (_iBossType == 1) {
+			for (int i = 5; i < 9; i++) {
+				g_Boss[i]->draw();
+				if (!_bFirstDied) {
+					for (int j = 0; j < g_Boss[i]->_iOut; j++) {
+						g_Boss[i]->g_Attack[j]->draw(7);
+					}
+				}
+			}
+		}
+		if (_iBossType == 1 || _iBossType == 2) {
+			for (int i = 1; i < 5; i++) {
+				g_Boss[i]->draw();
+				if (!_bSecondDied) {
+					for (int j = 0; j < g_Boss[i]->_iOut; j++) {
+						g_Boss[i]->g_Attack[j]->draw(7);
+					}
+				}
+			}
+		}
+
+	}
 	g_FiveStar->draw(4);
 	glutSwapBuffers();	// 交換 Frame Buffer
 }
 
 void onFrameMove(float delta)
 {
-	ProtectRotation(delta);
+	if (!_bUseTrace) {
+		ProtectRotation(delta);
+	}
+	else {
+		TraceAttack(delta);
+	}
 	Shoot(delta);
 	CloudMove(delta);
 	//for 3-2 eat change
@@ -261,6 +308,7 @@ void onFrameMove(float delta)
 	EnemyTime += delta;
 	EnemyTime_S += delta;
 	EnemyTime_T += delta;
+	g_fGenBossClock += delta;
 	//Player be Attacked 
 	if (_bAttacked) {
 		BeAttack(delta);
@@ -433,6 +481,100 @@ void onFrameMove(float delta)
 		}
 
 	}
+	//boss
+	if (g_fGenBossClock>20.0f && !_bBossGen) {
+		_bBossGen = true;
+		g_Boss[0] = new Enemy(3);
+		g_fBoss[0][0] = 0.0f; g_fBoss[0][1] = 5.0f; g_fBoss[0][2] = 0.0f;
+		vec4 vColor = vec4(1, 0, 0, 1);
+		g_Boss[0]->setColor(vColor);
+		mat4 mxT = Translate(g_fBoss[0][0], g_fBoss[0][1], g_fBoss[0][2]);
+		g_Boss[0]->setTRSMatrix(mxT);
+		g_Boss[0]->setShader(g_mxModelView, g_mxProjection);
+		for (int i = 1; i < 5; i++) {
+			g_Boss[i] = new Enemy(1);
+			switch (i)
+			{
+			case 1:
+				g_fBoss[i][0] = 3.0f; g_fBoss[i][1] = 0; g_fBoss[i][2] = 0.0f;
+				break;
+			case 2:
+				g_fBoss[i][0] = 0; g_fBoss[i][1] = - 3.0f; g_fBoss[i][2] = 0.0f;
+				break;
+			case 3:
+				g_fBoss[i][0] = -3.0f; g_fBoss[i][1] =0; g_fBoss[i][2] = 0.0f;
+				break;
+			case 4:
+				g_fBoss[i][0] = 0; g_fBoss[i][1] =  3.0f; g_fBoss[i][2] = 0.0f;
+				break;
+			}
+			vec4 vColor = vec4(i*0.2, i*0.25, i*0.2, 1);
+			g_Boss[i]->setColor(vColor);
+			mat4 mxT = Translate(g_fBoss[i][0], g_fBoss[i][1], g_fBoss[i][2]);
+			mat4 mxCT = Translate(g_fBoss[0][0], g_fBoss[0][1], g_fBoss[0][2]);
+			g_Boss[i]->setTRSMatrix(mxCT*mxT);
+			g_Boss[i]->setShader(g_mxModelView, g_mxProjection);
+		}
+		for (int i = 5; i < 9; i++) {
+			g_Boss[i] = new Enemy(2);
+			switch (i)
+			{
+			case 5:
+				g_fBoss[i][0] = 4.5f; g_fBoss[i][1] = 4.5f; g_fBoss[i][2] = 0.0f;
+				break;
+			case 6:
+				g_fBoss[i][0] = 4.5f; g_fBoss[i][1] =  - 4.5f; g_fBoss[i][2] = 0.0f;
+				break;
+			case 7:
+				g_fBoss[i][0] = - 4.5f; g_fBoss[i][1] = -4.5f; g_fBoss[i][2] = 0.0f;
+				break;
+			case 8:
+				g_fBoss[i][0] =-4.5f; g_fBoss[i][1] = 4.5f; g_fBoss[i][2] = 0.0f;
+				break;
+			}
+			vec4 vColor = vec4(i * 0.1, i * 0.05, i * 0.0, 1);
+			g_Boss[i]->setColor(vColor);
+			mat4 mxT = Translate(g_fBoss[i][0], g_fBoss[i][1], g_fBoss[i][2]);
+			mat4 mxCT = Translate(g_fBoss[0][0], g_fBoss[0][1], g_fBoss[0][2]);
+			g_Boss[i]->setTRSMatrix(mxCT*mxT);
+			g_Boss[i]->setShader(g_mxModelView, g_mxProjection);
+		}
+		printf("Boss Gen");
+	}
+	if (_bBossGen) {
+		BossMove(delta,1);
+		for (int j = 0; j < _iOut; j++) {
+			bool attackAdd = false;
+			bool attack = g_Boss[0]->CheckCollider(g_Missile[j]->getPos().x, g_Missile[j]->getPos().y, 2.0f);
+			if (attack && !_bMissileSus[j] && _bBossOpen) {
+				_iBeAttackCount++;
+				_bMissileSus[j] = true;
+				printf("Score:%d\n", _iBeAttackCount);
+			}
+		}
+		/*first change*/
+		if (_iBeAttackCount == 10 && !_bFirstDied) {
+			_bFirstDied = true;
+			g_fFirstDiedPos[0] = g_Boss[0]->getPos().x;
+			g_fFirstDiedPos[1] = g_Boss[0]->getPos().y;
+		}
+		/*second change*/
+		if (_iBeAttackCount == 20 && !_bSecondDied) {
+			_bSecondDied = true;
+			g_fSecondDiedPos[0] = g_Boss[0]->getPos().x;
+			g_fSecondDiedPos[1] = g_Boss[0]->getPos().y;
+		}
+		if (_iBossType == 1 && !_bFirstDied) {
+			for (int i = 5; i < 9; i++) {
+				Attack(delta, i, g_Boss[i], 2);
+			}
+		}
+		if ((_iBossType == 1 || _iBossType == 2) && !_bSecondDied) {
+			for (int i = 1; i < 5; i++) {
+				Attack(delta, i, g_Boss[i], 1);
+			}
+		}
+	}
 	if (_fShootDur >= 3.5f) {
 		_fShootDur = 0.5f;
 	}
@@ -578,6 +720,14 @@ void ProtectRotation(float delta) {
 	
 	g_FiveStar->setTRSMatrix( mxGT  * g_Flightercenter * g_initmxS[0] * mxR * g_finitmxT);
 }
+void TraceAttack(float delta) {
+	mat4 mxT;
+	_fTraceCount += delta;
+	_fTraceDir[0] = g_Player[0]->getPos().x - g_FiveStar->getPos().x;
+	_fTraceDir[1] = g_Player[0]->getPos().y - g_FiveStar->getPos().y;
+	mxT = Translate(g_FiveStar->getPos().x + _fTraceDir[0] * _fTraceCount, g_FiveStar->getPos().y + _fTraceDir[1] * _fTraceCount, 0);
+	g_FiveStar->setTRSMatrix(mxT);
+}
 //---------------------------------------------------------------------------------------------------------------------
 //1-3 1-4
 void Shoot(float delta) {
@@ -617,8 +767,10 @@ void Shoot(float delta) {
 				g_shootMousePos[j][1] = g_shootMousePos[j + 1][1];
 				g_Missile[j] = g_Missile[j + 1];
 				g_Missile[j]->setPos(vec3(g_fTx, g_fTy + g_fShootDir[j] * _fShootSpeed, 0));
+				_bMissileSus[j] = _bMissileSus[j + 1];
 			}
 			g_fShootDir[_iOut-1] = 0;
+			_bMissileSus[_iOut - 1] = false;
 			_iOut--;
 		}
 	}
@@ -762,6 +914,7 @@ void EnemyMove(int type, int index,float delta) {
 		g_Enemy_S[index]->setTRSMatrix(mxT* mxR);
 		//printf("(%f,%f,%d,%d)\n", g_Enemy[index]->getPos().x, g_fEnemyCount[index], _iInverse[index],index);
 		break;
+
 	}
 }
 //for 2-4
@@ -771,7 +924,6 @@ void Attack(float delta,int i,Enemy* Enemy,int type) {
 	vec4 vColor = vec4(1, 0, 0, 1);
 	float px, py, pz = 0.0f;
 	Enemy->_fAttackTime += delta;
-	//printf("%d:%f\n", i, g_Enemy[i]->_fAttackTime);
 	if (Enemy->_fAttackTime > Enemy->_fAttackDur && Enemy->_bEnemyDel == false) {
 		Enemy->g_Attack[Enemy->_iOut] = new CFlighter(7);
 		if(type == 1) vColor = vec4(1, 0, 0, 1);
@@ -868,10 +1020,10 @@ void Attack(float delta,int i,Enemy* Enemy,int type) {
 				//printf("(%f,%f),(%f,%f)\n", g_FiveStar->getPos().x, g_FiveStar->getPos().y, g_Player[0]->getPos().x, g_Player[0]->getPos().y);
 				if (_bDefend) {
 					Enemy->_bAttackSus[j] = true;
-					printf("1Defend\n");
+					//printf("1Defend\n");
 				}
 				if (_bAttack && !_bAttacked && !Enemy->_bAttackSus[j]) {
-					printf("Attack\n");
+					//printf("Attack\n");
 					Enemy->_bAttackSus[j] = true;
 					_bAttacked = true;
 					_fShootDur += 1.0f;
@@ -895,10 +1047,10 @@ void Attack(float delta,int i,Enemy* Enemy,int type) {
 				//printf("(%f,%f),(%f,%f)\n", g_FiveStar->getPos().x, g_FiveStar->getPos().y, g_Player[0]->getPos().x, g_Player[0]->getPos().y);
 				if (_bDefend) {
 					Enemy->_bAttackSus[j] = true;
-					printf("2Defend\n");
+					//printf("2Defend\n");
 				}
 				if (_bAttack && !_bAttacked && !Enemy->_bAttackSus[j]) {
-					printf("Attack\n");
+					//printf("Attack\n");
 					Enemy->_bAttackSus[j] = true;
 					_bAttacked = true;
 					_fShootDur += 1.0f;
@@ -923,10 +1075,10 @@ void Attack(float delta,int i,Enemy* Enemy,int type) {
 				//printf("(%f,%f),(%f,%f)\n", g_FiveStar->getPos().x, g_FiveStar->getPos().y, g_Player[0]->getPos().x, g_Player[0]->getPos().y);
 				if (_bDefend) {
 					Enemy->_bAttackSus[j] = true;
-					printf("3Defend\n");
+					//printf("3Defend\n");
 				}
 				if (_bAttack && !_bAttacked && !Enemy->_bAttackSus[j]) {
-					printf("Attack\n");
+					//printf("Attack\n");
 					Enemy->_bAttackSus[j] = true;
 					_bAttacked = true;
 					_fShootDur += 1.0f;
@@ -963,6 +1115,168 @@ void BeAttack(float delta) {
 		_bAttacked = false;
 	}
 }
+float RotateCount;
+bool inverse[4] = { true };
+void BossMove(float delta,int type) {
+	RotateCount += delta;
+	g_fScaleClock += delta;
+	if (RotateCount > 180.0f) RotateCount == -180.0f;
+	if (RotateCount < -270.0f) RotateCount == -RotateCount;
+	float s;
+	mat4 mxR,mxT,mxCT,mxS;
+	mxR = RotateZ(RotateCount*90);
+	s = (1 - sin((g_fScaleClock * 0.25 * 180.0f) * 3.1415926 / 180.0f)) * 0.8f ;//縮放
+	if (s < 0.01f) {
+		g_fBoss[0][0] = getRandomf(5.0f, -5.0f);
+		g_fBoss[0][1] = getRandomf(10.0f, 5.0f);
+	}
+	if (s > 1.0f) {
+		s = 1.0f;
+		_bBossOpen = true;
+	}
+	else {
+		_bBossOpen = false;
+	}
+	mxS = Scale(s, s, 1);
+	mxCT = Translate(g_fBoss[0][0], g_fBoss[0][1], g_fBoss[0][2]);
+	g_Boss[0]->setTRSMatrix(mxCT*mxS);
+	g_Boss[0]->setPos(vec3(g_fBoss[0][0], g_fBoss[0][1], g_fBoss[0][2]));
+	if ((type == 1 || type == 2) && !_bSecondDied) {
+		for (int i = 1; i < 5; i++) {
+			mxT = Translate(g_fBoss[i][0], g_fBoss[i][1], g_fBoss[i][2]);
+			mxCT = Translate(g_fBoss[0][0], g_fBoss[0][1], g_fBoss[0][2]);
+			g_Boss[i]->setTRSMatrix(mxCT * mxR * mxS * mxT * mxR);
+			float fx, fy;
+			fx = g_fBoss[i][0] + g_fBoss[0][0] + mxR._m->x+ mxS._m->x + mxR._m->x;
+			fy = g_fBoss[i][1] + g_fBoss[0][1]+ mxR._m->y + mxS._m->y + mxR._m->y;
+			//printf(" % d:(% f, % f)", i, fx, fy);
+			g_Boss[i]->setPos(vec3(fx, fy, 0));
+		}
+	}
+	else {
+		for (int i = 1; i < 5; i++) {
+			g_fBoss[i][1] -= delta * 4;
+			mxT = Translate(g_fBoss[i][0], g_fBoss[i][1], g_fBoss[i][2]);
+			mxCT = Translate(g_fSecondDiedPos[0], g_fSecondDiedPos[1],0);
+			g_Boss[i]->setTRSMatrix(mxCT  * mxT * mxR);
+			float fx, fy;
+			fx = g_fBoss[i][0] + g_fSecondDiedPos[0] + mxR._m->x;
+			fy = g_fBoss[i][1] + g_fSecondDiedPos[1] + mxR._m->y;
+			//printf(" % d:(% f, % f)", i, fx, fy);
+			g_Boss[i]->setPos(vec3(fx, fy, 0));
+		}
+	}
+	if (type == 1 && !_bFirstDied) {
+		for (int i = 5; i < 9; i++) {
+			switch (i) {
+			case 5:
+				if (g_fBoss[i][0] >= 4.0f) {
+					inverse[0] = true;
+				}
+				else if (g_fBoss[i][0] < 1.5f) {
+					inverse[0] = false;
+				}
+				if (inverse[0]) {
+					g_fBoss[i][0] -= delta * 2;
+					g_fBoss[i][1] -= delta * 2;
+				}
+				else {
+					g_fBoss[i][0] += delta * 2;
+					g_fBoss[i][1] += delta * 2;
+				}
+				break;
+			case 6:
+				if (g_fBoss[i][0] >= 4.0f) {
+					inverse[1] = true;
+				}
+				else if (g_fBoss[i][0] < 1.5f) {
+					inverse[1] = false;
+				}
+				if (inverse[1]) {
+					g_fBoss[i][0] -= delta * 2;
+					g_fBoss[i][1] += delta * 2;
+				}
+				else {
+					g_fBoss[i][0] += delta * 2;
+					g_fBoss[i][1] -= delta * 2;
+				}
+				break;
+			case 7:
+				if (g_fBoss[i][0] > -1.5f) {
+					inverse[2] = true;
+				}
+				else if (g_fBoss[i][0] <= -4.0f) {
+					inverse[2] = false;
+				}
+				if (inverse[2]) {
+					g_fBoss[i][0] -= delta * 2;
+					g_fBoss[i][1] -= delta * 2;
+				}
+				else {
+					g_fBoss[i][0] += delta * 2;
+					g_fBoss[i][1] += delta * 2;
+				}
+				break;
+			case 8:
+				if (g_fBoss[i][0] > -1.5f) {
+					inverse[3] = true;
+				}
+				else if (g_fBoss[i][0] <= -4.0f) {
+					inverse[3] = false;
+				}
+				if (inverse[3]) {
+					g_fBoss[i][0] -= delta * 2;
+					g_fBoss[i][1] += delta * 2;
+				}
+				else {
+					g_fBoss[i][0] += delta * 2;
+					g_fBoss[i][1] -= delta * 2;
+				}
+				break;
+			}
+
+			mxT = Translate(g_fBoss[i][0], g_fBoss[i][1], g_fBoss[i][2]);
+			g_Boss[i]->setTRSMatrix(mxCT * mxT * mxS);
+			float fx, fy;
+			fx = g_fBoss[i][0] + g_fBoss[0][0];
+			fy = g_fBoss[i][1] + g_fBoss[0][1];
+			g_Boss[i]->setPos(vec3(fx, fy, 0));
+		}
+
+	}
+	else {
+		for (int i = 5; i < 9; i++) {
+			switch (i) {
+			case 5:
+				g_fBoss[i][1] -= delta * 2;
+			case 6:
+				g_fBoss[i][1] -= delta * 2;
+				break;
+			case 7:
+				g_fBoss[i][1] -= delta * 2;
+				break;
+			case 8:
+				g_fBoss[i][1] -= delta * 2;
+				break;
+			}
+			mxCT = Translate(g_fFirstDiedPos[0], g_fFirstDiedPos[1], 0);
+			mxT = Translate(g_fBoss[i][0], g_fBoss[i][1], g_fBoss[i][2]);
+			g_Boss[i]->setTRSMatrix(mxCT* mxT);
+			float fx, fy;
+			fx = g_fBoss[i][0] + g_fFirstDiedPos[0];
+			fy = g_fBoss[i][1] + g_fFirstDiedPos[1];
+			g_Boss[i]->setPos(vec3(fx, fy, 0));
+		}
+
+	}
+	if (g_fBoss[8][1] < -14.0f) {
+		_iBossType == 2;
+	}
+	if (g_fBoss[1][1] < -14.5f) {
+		_iBossType == 3;
+	}
+}
+
 //----------------------------------------------------------------------------------------------------------------------------
 void UpdateMatrix()
 {
@@ -1006,6 +1320,9 @@ void Win_Keyboard(unsigned char key, int x, int y)
 			if (g_Enemy_T[i] != nullptr && !_bEnemyDel_T[i])
 				delete g_Enemy_T[i];
 		}
+		for (int i = 0; i < 8; i++) {
+			delete g_Boss[i];
+		}
 		exit(EXIT_SUCCESS);
 		break;
 	}
@@ -1023,7 +1340,13 @@ void Win_Mouse(int button, int state, int x, int y) {
 		if (state == GLUT_DOWN);
 		break;
 	case GLUT_RIGHT_BUTTON:   // 目前按下的是滑鼠右鍵
-		if (state == GLUT_DOWN);
+		if (state == GLUT_DOWN) {
+			if (_bUpgrade[2] && !_bTraceCold) {
+				_bUseTrace = true;
+
+			}
+		}
+		
 		break;
 	default:
 		break;
