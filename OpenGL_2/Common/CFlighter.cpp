@@ -1,13 +1,42 @@
 #include "CFlighter.h"
 
-CFlighter::CFlighter()
+CFlighter::CFlighter(int type)
 {
-	_Points[0] = vec4(-0.5f, 0.5f, 0.0f, 1.0f);
-	_Points[1] = vec4(0.5f, 0.5f, 0.0f, 1.0f);
-	_Points[2] = vec4(0.5f, -0.5f, 0.0f, 1.0f);
-	_Points[3] = vec4(-0.5f, 0.5f, 0.0f, 1.0f);
-	_Points[4] = vec4(0.5f, -0.5f, 0.0f, 1.0f);
-	_Points[5] = vec4(-0.5f, -0.5f, 0.0f, 1.0f);
+	switch (type)
+	{
+	case 1:
+		_Points[0] = vec4(-2.0f, -1.5f, 0.0f, 1.0f);
+		_Points[1] = vec4(-2.0f, -2.0f, 0.0f, 1.0f);
+		_Points[2] = vec4(-1.7f, -2.0f, 0.0f, 1.0f);
+		_Points[3] = vec4(-2.0f, -1.5f, 0.0f, 1.0f);
+		_Points[4] = vec4(-1.7f, -2.0f, 0.0f, 1.0f);
+		_Points[5] = vec4(-1.7f, -1.5f, 0.0f, 1.0f);
+
+		_Points[6] = vec4(-1.7f, -1.2f, 0.0f, 1.0f);
+		_Points[7] = vec4(-1.7f, -1.9f, 0.0f, 1.0f);
+		_Points[8] = vec4(-1.4f, -1.9f, 0.0f, 1.0f);
+		_Points[9] = vec4(-1.7f, -1.2f, 0.0f, 1.0f);
+		_Points[10] = vec4(-1.4f, -1.9f, 0.0f, 1.0f);
+		_Points[11] = vec4(-1.4f, -1.2f, 0.0f, 1.0f);
+		break;
+	case 2:
+
+		_Points[0] = vec4(-1.7f, -1.2f, 0.0f, 1.0f);
+		_Points[1] = vec4(-1.7f, -1.9f, 0.0f, 1.0f);
+		_Points[2] = vec4(-1.4f, -1.9f, 0.0f, 1.0f);
+		_Points[3] = vec4(-1.7f, -1.2f, 0.0f, 1.0f);
+		_Points[4] = vec4(-1.4f, -1.9f, 0.0f, 1.0f);
+		_Points[5] = vec4(-1.4f, -1.2f, 0.0f, 1.0f);
+
+		_Points[6] = vec4(-1.4f, -1.5f, 0.0f, 1.0f);
+		_Points[7] = vec4(-1.4f, -2.0f, 0.0f, 1.0f);
+		_Points[8] = vec4(-1.1f, -2.0f, 0.0f, 1.0f);
+		_Points[9] = vec4(-1.4f, -1.5f, 0.0f, 1.0f);
+		_Points[10] = vec4(-1.1f, -2.0f, 0.0f, 1.0f);
+		_Points[11] = vec4(-1.1f, -1.5f, 0.0f, 1.0f);
+		break;
+	}
+	
 
 	_Colors[0] = vec4(1.0f, 1.0f, 1.0f, 1.0f);  // (r, g, b, a)
 	_Colors[1] = vec4(1.0f, 0.0f, 0.0f, 1.0f);
@@ -16,6 +45,7 @@ CFlighter::CFlighter()
 	_Colors[4] = vec4(0.0f, 1.0f, 0.0f, 1.0f);
 	_Colors[5] = vec4(0.0f, 0.0f, 1.0f, 1.0f);
 
+	
 	// Create and initialize a buffer object 
 	CreateBufferObject();
 	_bUpdateProj = false;
@@ -79,15 +109,33 @@ void CFlighter::setTRSMatrix(mat4& mat)
 	_mxTRS = mat;
 	_bUpdateMV = true;
 }
-
-void CFlighter::setColor(GLfloat vColor[4])
+void CFlighter::setTMatrix(mat4& mat)
 {
-	for (int i = 0; i < 6; i++) {
-		_Colors[i].x = vColor[0];
-		_Colors[i].y = vColor[1];
-		_Colors[i].z = vColor[2];
-		_Colors[i].w = vColor[3];
+	_mxT = mat;
+	_bUpdateMT = true;
+}
+void CFlighter::setColor(GLfloat vColor[4], int index)
+{
+	switch (index)
+	{
+	case 1:
+		for (int i = 0; i < 6; i++) {
+			_Colors[i].x = vColor[0];
+			_Colors[i].y = vColor[1];
+			_Colors[i].z = vColor[2];
+			_Colors[i].w = vColor[3];
+		}
+		break;
+	case 2:
+		for (int i = 6; i < 12; i++) {
+			_Colors[i].x = vColor[0];
+			_Colors[i].y = vColor[1];
+			_Colors[i].z = vColor[2];
+			_Colors[i].w = vColor[3];
+		}
+		break;
 	}
+
 	glBindBuffer(GL_ARRAY_BUFFER, _uiBuffer);
 	glBufferSubData(GL_ARRAY_BUFFER, sizeof(_Points), sizeof(_Colors), _Colors);
 }
@@ -128,6 +176,10 @@ void CFlighter::draw()
 		_mxMVFinal = _mxView * _mxTRS;
 		_bUpdateMV = false;
 	}
+	if (_bUpdateMT) {
+		_mxMVFinal = _mxMVFinal * _mxT;
+		_bUpdateMT = false;
+	}
 	glUniformMatrix4fv(_uiModelView, 1, GL_TRUE, _mxMVFinal);
 
 	if (_bUpdateProj) {
@@ -145,7 +197,10 @@ void CFlighter::drawW()
 		_mxMVFinal = _mxView * _mxTRS;
 		_bUpdateMV = false;
 	}
-
+	if (_bUpdateMT) {
+		_mxMVFinal = _mxMVFinal * _mxT;
+		_bUpdateMT = false;
+	}
 	glUniformMatrix4fv(_uiModelView, 1, GL_TRUE, _mxMVFinal);
 	if (_bUpdateProj) {
 		glUniformMatrix4fv(_uiProjection, 1, GL_TRUE, _mxProjection);
