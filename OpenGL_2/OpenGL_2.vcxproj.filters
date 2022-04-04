@@ -39,11 +39,11 @@
     <ClCompile Include="Common\CQuadEX2B.cpp">
       <Filter>Common</Filter>
     </ClCompile>
-    <ClCompile Include="Example1.cpp">
-      <Filter>原始程式檔</Filter>
-    </ClCompile>
-    <ClCompile Include="Common\Flighter.cpp">
+    <ClCompile Include="Common\CFlighter.cpp">
       <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Flighter.cpp">
+      <Filter>原始程式檔</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -71,7 +71,7 @@
     <ClInclude Include="Common\CQuadEX2B.h">
       <Filter>Common</Filter>
     </ClInclude>
-    <ClInclude Include="Common\Flighter.h">
+    <ClInclude Include="Common\CFlighter.h">
       <Filter>Common</Filter>
     </ClInclude>
   </ItemGroup>

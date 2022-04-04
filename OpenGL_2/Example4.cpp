@@ -3,7 +3,7 @@
 // 上下移動藍色方塊繞著紅色方塊進行逆時針方向旋轉
 
 #include "header/Angel.h"
-#include "Common/CQuad.h"
+#include "Common/Flighter.h"
 
 #define SPACE_KEY 32
 #define SCREEN_SIZE 800
@@ -14,9 +14,9 @@
 #define BDISTANCE 3
 
 // For grid quad
-CQuad *g_pRQuad;				// 位於畫面正中間
-CQuad *g_pGQuad[GRID_SIZE];	// 為 Red Quad 的 child
-CQuad *g_pBQuad[GRID_SIZE];	// x為 Green Quad 的 child
+Flighter*g_pRQuad;				// 位於畫面正中間
+Flighter*g_pGQuad[GRID_SIZE];	// 為 Red Quad 的 child
+Flighter*g_pBQuad[GRID_SIZE];	// x為 Green Quad 的 child
 float  g_fRQuadT[3];
 float  g_fGQuadT[GRID_SIZE][3]={0};	// 紅色方塊的位移
 float  g_fBQuadT[GRID_SIZE][3]={0};	// 藍色方塊的位移，與紅色方塊的父子關係為一對一
@@ -76,7 +76,7 @@ void CreateQuadRelationship()
 	int idx = 0;
 
 	// Red Quad 放在螢幕正中間
-	g_pRQuad = new CQuad;
+	g_pRQuad = new Flighter;
 	g_pRQuad->setColor(vColor);
 	g_fRQuadT[0] = g_fRQuadT[1] = g_fRQuadT[2] = 0;
 	mxRT = Translate(g_fRQuadT[0],g_fRQuadT[1],g_fRQuadT[2]);
@@ -91,7 +91,7 @@ void CreateQuadRelationship()
 	g_fGQuadT[3][0] = g_fGQuadT[3][2]; g_fGQuadT[3][1] = -GDISTANCE;
 
 	for( int i = 0 ; i < 4 ; i++ ) {
-		g_pGQuad[i] = new CQuad;
+		g_pGQuad[i] = new Flighter;
 		g_pGQuad[i]->setColor(vColor); 
 		mxGT[i] = Translate(g_fGQuadT[i][0], g_fGQuadT[i][1], g_fGQuadT[i][2]);
 		g_pGQuad[i]->setShader(g_mxModelView, g_mxProjection);
@@ -106,7 +106,7 @@ void CreateQuadRelationship()
 	g_fBQuadT[3][0] = g_fBQuadT[3][2]; g_fBQuadT[3][1] = -BDISTANCE;
 
 	for( int i = 0 ; i < 4 ; i++ ) {
-		g_pBQuad[i] = new CQuad;
+		g_pBQuad[i] = new Flighter;
 		g_pBQuad[i]->setColor(vColor); 
 		mxBT[i] = Translate(g_fBQuadT[i][0], g_fBQuadT[i][1], g_fBQuadT[i][2]);
 		g_pBQuad[i]->setShader(g_mxModelView, g_mxProjection);

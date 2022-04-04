@@ -1,6 +1,6 @@
-#include "CQuad.h"
+#include "CFlighter.h"
 
-CQuad::CQuad()
+CFlighter::CFlighter()
 {
 	_Points[0] = vec4(-0.5f, 0.5f, 0.0f, 1.0f);
 	_Points[1] = vec4(0.5f, 0.5f, 0.0f, 1.0f);
@@ -22,7 +22,7 @@ CQuad::CQuad()
 }
 
 
-void CQuad::CreateBufferObject()
+void CFlighter::CreateBufferObject()
 {
 	glGenVertexArrays(1, &_uiVao);
 	glBindVertexArray(_uiVao);
@@ -37,7 +37,7 @@ void CQuad::CreateBufferObject()
 	glBufferSubData(GL_ARRAY_BUFFER, sizeof(_Points), sizeof(_Colors), _Colors);
 }
 
-void CQuad::setShader(mat4& mxView, mat4& mxProjection, GLuint uiShaderHandle)
+void CFlighter::setShader(mat4& mxView, mat4& mxProjection, GLuint uiShaderHandle)
 {
 	// Load shaders and use the resulting shader program
 	if (uiShaderHandle == MAX_UNSIGNED_INT) _uiProgram = InitShader("vsVtxColor.glsl", "fsVtxColor.glsl");
@@ -62,25 +62,25 @@ void CQuad::setShader(mat4& mxView, mat4& mxProjection, GLuint uiShaderHandle)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void CQuad::setViewMatrix(mat4& mat)
+void CFlighter::setViewMatrix(mat4& mat)
 {
 	_mxView = mat;
 	_bUpdateMV = true;
 }
 
-void CQuad::setProjectionMatrix(mat4& mat)
+void CFlighter::setProjectionMatrix(mat4& mat)
 {
 	_mxProjection = mat;
 	_bUpdateProj = true;
 }
 
-void CQuad::setTRSMatrix(mat4& mat)
+void CFlighter::setTRSMatrix(mat4& mat)
 {
 	_mxTRS = mat;
 	_bUpdateMV = true;
 }
 
-void CQuad::setColor(GLfloat vColor[4])
+void CFlighter::setColor(GLfloat vColor[4])
 {
 	for (int i = 0; i < 6; i++) {
 		_Colors[i].x = vColor[0];
@@ -92,7 +92,7 @@ void CQuad::setColor(GLfloat vColor[4])
 	glBufferSubData(GL_ARRAY_BUFFER, sizeof(_Points), sizeof(_Colors), _Colors);
 }
 
-void CQuad::setVtxColors(GLfloat vLFColor[], GLfloat vLRColor[], GLfloat vTRColor[], GLfloat vTLColor[])
+void CFlighter::setVtxColors(GLfloat vLFColor[], GLfloat vLRColor[], GLfloat vTRColor[], GLfloat vTLColor[])
 {
 	_Colors[0].x = vLFColor[0];
 	_Colors[0].y = vLFColor[1];
@@ -120,7 +120,7 @@ void CQuad::setVtxColors(GLfloat vLFColor[], GLfloat vLRColor[], GLfloat vTRColo
 	glBufferSubData(GL_ARRAY_BUFFER, sizeof(_Points), sizeof(_Colors), _Colors);
 }
 
-void CQuad::draw()
+void CFlighter::draw()
 {
 	glUseProgram(_uiProgram);
 	glBindVertexArray(_uiVao);
@@ -137,7 +137,7 @@ void CQuad::draw()
 	glDrawArrays(GL_TRIANGLES, 0, QUAD_NUM);
 }
 
-void CQuad::drawW()
+void CFlighter::drawW()
 {
 	glBindVertexArray(_uiVao);
 

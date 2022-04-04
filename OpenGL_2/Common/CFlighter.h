@@ -1,6 +1,6 @@
 #pragma once
-#ifndef CQUAD_H
-#define CQUAD_H
+
+#define CCFlighter_H
 #include "../header/Angel.h"
 
 typedef Angel::vec4  color4;
@@ -8,7 +8,7 @@ typedef Angel::vec4  point4;
 
 #define QUAD_NUM 6  // 2 faces, 2 triangles/face 
 
-class CQuad
+class CFlighter
 {
 private:
 	vec4 _Points[QUAD_NUM];
@@ -31,7 +31,7 @@ private:
 
 	void CreateBufferObject();
 public:
-	CQuad();
+	CFlighter();
 
 	void setShader(mat4& mxModelView, mat4& mxProjection, GLuint uiShaderHandle = MAX_UNSIGNED_INT);
 	GLuint getShaderHandle() { return _uiProgram; }
@@ -48,4 +48,3 @@ public:
 
 
 
-#endif
