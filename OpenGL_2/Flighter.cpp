@@ -15,17 +15,7 @@
 
 //my code 
 #define FBASE 6
-
-// For grid quad
-CFlighter* g_pRQuad_Lo;				// 位於畫面正中間
-float  g_fRQuadT_Lo[3];
-CFlighter* g_pRQuad_Lt;
-float  g_fRQuadT_Lt[3];
-CFlighter* g_pRQuad_Rt;
-float  g_fRQuadT_Rt[3];
-CFlighter* g_pRQuad_Ro;
-float  g_fRQuadT_Ro[3];
-
+//for Flighter
 CFlighter* g_Player[FLIGHTER_SIZE];
 float g_fPlayer[FLIGHTER_SIZE][3];
 mat4 g_initmxS[4];
@@ -82,7 +72,7 @@ void CreateQuadRelationship()
 	mat4 mxT;
 	mat4 mxS;
 	int idx = 0;
-
+	// Flighter Create
 	for (int i = 0; i < 4; i++) {
 		if (i %3 ==0) {
 			if (i < 2) {
@@ -132,55 +122,6 @@ void CreateQuadRelationship()
 		}
 		g_Player[i]->setShader(g_mxModelView, g_mxProjection);
 	}
-	// Red Quad 放在螢幕正中間
-	/*g_pRQuad_Lo = new CFlighter(1);
-	g_pRQuad_Lo->setColor(vColor,1);
-	vColor= vec4(1, 1, 0, 1);
-	g_pRQuad_Lo->setColor(vColor, 2);
-	g_fRQuadT_Lo[0] = g_fRQuadT_Lo[1] = g_fRQuadT_Lo[2] = 0;
-	mxT = Translate(g_fRQuadT_Lo[0], g_fRQuadT_Lo[1], g_fRQuadT_Lo[2]);
-	g_pRQuad_Lo->setShader(g_mxModelView, g_mxProjection);
-	g_pRQuad_Lo->setTRSMatrix(mxT);
-
-	g_pRQuad_Lt = new CFlighter(1);
-	vColor = vec4(1, 0, 221, 1);
-	g_pRQuad_Lt->setColor(vColor, 1);
-	vColor = vec4(0, 0, 1, 1);
-	g_pRQuad_Lt->setColor(vColor, 2);
-	g_fRQuadT_Lt[0]= 0.6;
-	g_fRQuadT_Lt[1] = 2.2;
-	g_fRQuadT_Lt[2] = 0;
-	mxT = Translate(g_fRQuadT_Lt[0], g_fRQuadT_Lt[1], g_fRQuadT_Lt[2]);
-	mxS = Scale(1.0, 2.0, 0);
-	g_pRQuad_Lt->setShader(g_mxModelView, g_mxProjection);
-	g_pRQuad_Lt->setTRSMatrix(mxT* mxS);
-
-	g_pRQuad_Rt = new CFlighter(2);
-	vColor = vec4(0, 0, 1, 1);
-	g_pRQuad_Rt->setColor(vColor, 1);
-	vColor = vec4(1, 0, 221, 1);
-	g_pRQuad_Rt->setColor(vColor, 2);
-	g_fRQuadT_Rt[0] = 0.9;
-	g_fRQuadT_Rt[1] = 2.2;
-	g_fRQuadT_Rt[2] = 0;
-	mxT = Translate(g_fRQuadT_Rt[0], g_fRQuadT_Rt[1], g_fRQuadT_Rt[2]);
-	mxS = Scale(1.0, 2.0, 0);
-	
-	g_pRQuad_Rt->setShader(g_mxModelView, g_mxProjection);
-	g_pRQuad_Rt->setTRSMatrix(mxT * mxS);
-
-
-	g_pRQuad_Ro = new CFlighter(2);
-	vColor = vec4(1, 0, 0, 1);
-	g_pRQuad_Ro->setColor(vColor, 2);
-	vColor = vec4(1, 1, 0, 1);
-	g_pRQuad_Ro->setColor(vColor, 1);
-	g_fRQuadT_Ro[0] = 1.5;
-	g_fRQuadT_Ro[1] = 0;
-	g_fRQuadT_Ro[2] = 0;
-	mxT = Translate(g_fRQuadT_Ro[0], g_fRQuadT_Ro[1], g_fRQuadT_Ro[2]);
-	g_pRQuad_Ro->setShader(g_mxModelView, g_mxProjection);
-	g_pRQuad_Ro->setTRSMatrix(mxT);*/
 }
 void UpdateMatrix()
 {
