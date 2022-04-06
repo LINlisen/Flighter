@@ -48,8 +48,8 @@
     <ClCompile Include="Example4.cpp">
       <Filter>Common</Filter>
     </ClCompile>
-    <ClCompile Include="Example3.cpp">
-      <Filter>Common</Filter>
+    <ClCompile Include="Example1.cpp">
+      <Filter>原始程式檔</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

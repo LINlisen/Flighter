@@ -10,6 +10,7 @@
 #define HALF_SIZE (SCREEN_SIZE/2) 
 #define VP_HALFWIDTH  12.0f
 #define FLIGHTER_SIZE 4 
+#define PFLIGHTER_SIZE 2 
 #define GDISTANCE 5
 #define BDISTANCE 3
 
@@ -19,7 +20,16 @@
 CFlighter* g_Player[FLIGHTER_SIZE];
 float g_fPlayer[FLIGHTER_SIZE][3];
 mat4 g_initmxS[4];
-
+mat4 g_initmxT[4];
+mat4 g_Flightercenter = Translate(-1.0f,-1.4f,0.0f);
+//for five star to protect flighter
+CFlighter* g_FiveStar;
+float g_fFiveStar[3];
+mat4 g_finitmxT;
+GLfloat g_fFAngle = 0;
+GLfloat g_fFDir = 1;
+//for mouse move
+mat4 mxGT;
 
 // For Model View and Projection Matrix
 mat4 g_mxModelView(1.0f);
@@ -33,6 +43,7 @@ GLfloat g_fTx = 0, g_fTy = 0;
 // 函式的原型宣告
 extern void IdleProcess();
 void CreateQuadRelationship();
+void ProtectRotation(float delta);
 
 void init(void)
 {
@@ -51,19 +62,21 @@ void GL_Display(void)
 {
 	glClear(GL_COLOR_BUFFER_BIT); // clear the window
 	for (int i = 0; i < FLIGHTER_SIZE; i++) {
-		g_Player[i]->draw();
+		g_Player[i]->draw(1);
 	}
-
+	g_FiveStar->draw(4);
 
 	glutSwapBuffers();	// 交換 Frame Buffer
 }
 
 void onFrameMove(float delta)
 {
+	ProtectRotation(delta);
 	GL_Display();
 }
 
 //----------------------------------------------------------------------------
+//create flighter and protect 1-1 1-2
 void CreateQuadRelationship()
 {
 	GLuint uiShaderHandle;
@@ -82,7 +95,7 @@ void CreateQuadRelationship()
 				g_Player[i]->setColor(vColor, 2);
 				g_fPlayer[i][0] = g_fPlayer[i][1] = g_fPlayer[i][2] = 0;
 				g_initmxS[i] = Scale(1.0, 1.0, 0);
-				mxT = Translate(g_fPlayer[i][0], g_fPlayer[i][1], g_fPlayer[i][2]);
+				g_initmxT[i] = Translate(g_fPlayer[i][0], g_fPlayer[i][1], g_fPlayer[i][2]);
 			}
 			else {
 				g_Player[i] = new  CFlighter(2);
@@ -94,9 +107,9 @@ void CreateQuadRelationship()
 				g_fPlayer[i][1] = 0;
 				g_fPlayer[i][2] = 0;
 				g_initmxS[i] = Scale(1.0, 1.0, 0);
-				mxT = Translate(g_fPlayer[i][0], g_fPlayer[i][1], g_fPlayer[i][2]);
+				g_initmxT[i] = Translate(g_fPlayer[i][0], g_fPlayer[i][1], g_fPlayer[i][2]);
 			}
-			g_Player[i]->setTRSMatrix(mxT);
+			g_Player[i]->setTRSMatrix(g_initmxT[i]);
 		}
 		else {
 			if (i < 2) {
@@ -116,13 +129,34 @@ void CreateQuadRelationship()
 			g_fPlayer[i][0] = 0.3*int(i+1);
 			g_fPlayer[i][1] = 2.2;
 			g_fPlayer[i][2] = 0;
-			mxT = Translate(g_fPlayer[i][0], g_fPlayer[i][1], g_fPlayer[i][2]);
+			g_initmxT[i] = Translate(g_fPlayer[i][0], g_fPlayer[i][1], g_fPlayer[i][2]);
 			g_initmxS[i] = Scale(1.0, 2.0, 0);
-			g_Player[i]->setTRSMatrix(mxT * g_initmxS[i]);
+			g_Player[i]->setTRSMatrix(g_initmxT[i] * g_initmxS[i]);
 		}
-		g_Player[i]->setShader(g_mxModelView, g_mxProjection);
+		g_Player[i]->setShader(g_mxModelView, g_mxProjection,1);
 	}
+	
+	//for fivestar create
+	g_FiveStar = new CFlighter(4);
+	vColor = vec4(1, 24, 141, 1);
+	g_FiveStar->setColor(vColor,4);
+	g_fFiveStar[0] = -3.0f; g_fFiveStar[1] = -1.25f; g_fFiveStar[2] = 0;
+	g_finitmxT = Translate(g_fFiveStar[0], g_fFiveStar[1], g_fFiveStar[2]);
+	g_FiveStar->setShader(g_mxModelView, g_mxProjection, 4);
+	g_FiveStar->setTRSMatrix(g_finitmxT);
 }
+
+void ProtectRotation(float delta) {
+	mat4 mxR;
+	g_fFAngle += delta * 90.0f;
+	if (g_fFAngle > 360.0) g_fFAngle -= 360;
+	else if (g_fFAngle < 0.0) g_fFAngle += 360.0;
+	mxR = RotateZ(g_fFAngle);
+
+	
+	g_FiveStar->setTRSMatrix( mxGT  * g_Flightercenter * g_initmxS[0] * mxR * g_finitmxT);
+}
+
 void UpdateMatrix()
 {
 	
@@ -143,10 +177,9 @@ void Win_Keyboard(unsigned char key, int x, int y)
 		break;
 	case 033:
 		glutIdleFunc(NULL);
-		delete g_pRQuad_Lo;
-		delete g_pRQuad_Lt;
-		delete g_pRQuad_Rt;
-		delete g_pRQuad_Rt;
+		for (int i = 0; i < FLIGHTER_SIZE; i++) {
+			delete g_Player[i];
+		}
 		exit(EXIT_SUCCESS);
 		break;
 	}
@@ -169,14 +202,14 @@ void Win_Mouse(int button, int state, int x, int y) {
 }
 // The passive motion callback for a window is called when the mouse moves within the window while no mouse buttons are pressed.
 void Win_PassiveMotion(int x, int y) {
-	mat4 mxGT, mxT;
+	mat4  mxT;
 
 	g_fTx = 12.0f * (x - HALF_SIZE) / (HALF_SIZE);
 	g_fTy = -12.0f * (y - HALF_SIZE) / (HALF_SIZE);
 	mxGT = Translate(g_fTx, g_fTy, 0);
 	for (int i = 0; i < FLIGHTER_SIZE; i++) {
 		mxT = Translate(g_fPlayer[i][0], g_fPlayer[i][1], g_fPlayer[i][2]);
-		g_Player[i]->setTRSMatrix(mxGT * mxT*g_initmxS[i]);
+		g_Player[i]->setTRSMatrix(mxGT * g_initmxT[i]*g_initmxS[i]);
 	}
 }
 // The motion callback for a window is called when the mouse moves within the window while one or more mouse buttons are pressed.

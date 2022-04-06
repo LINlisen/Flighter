@@ -88,7 +88,7 @@
     <ClCompile Include="Common\CQuadEX2B.cpp" />
     <ClCompile Include="Common\CFlighter.cpp" />
     <ClCompile Include="Common\Timer.cpp" />
-    <ClCompile Include="Example3.cpp" />
+    <ClCompile Include="Example1.cpp" />
     <ClCompile Include="Example4.cpp" />
     <ClCompile Include="Flighter.cpp" />
     <ClCompile Include="InitShader.cpp" />
