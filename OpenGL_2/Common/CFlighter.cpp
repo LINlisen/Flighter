@@ -63,6 +63,9 @@ CFlighter::CFlighter(int type)
 		_SPoints[4].y = RADIUS * sin(234* 2 * PI / 360);
 		_SPoints[4].z = 0; _SPoints[4].w = 1.0f;
 		break;
+	//for missile
+	case 5:
+
 	}
 	
 
