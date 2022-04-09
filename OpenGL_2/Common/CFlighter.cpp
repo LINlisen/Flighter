@@ -63,9 +63,15 @@ CFlighter::CFlighter(int type)
 		_SPoints[4].y = RADIUS * sin(234* 2 * PI / 360);
 		_SPoints[4].z = 0; _SPoints[4].w = 1.0f;
 		break;
-	//for missile
+	//for MISSILE_NUM
 	case 5:
-
+		for (int i = 0; i < MISSILE_NUM; i++) {
+			_MPoints[i].x = RADIUS * sin(i)*cos(i);
+			_MPoints[i].y = RADIUS * cos(i);
+			_MPoints[i].z = 0.0f;
+			_MPoints[i].w = 1.0f;
+		}
+		break;
 	}
 	
 
@@ -89,7 +95,7 @@ void CFlighter::CreateBufferObject(int type)
 	glBindVertexArray(_uiVao);
 
 	// Create and initialize a buffer object
-	if (type == 3) {
+	if (type == 3 ) {
 		glGenBuffers(1, &_uiBuffer);
 		glBindBuffer(GL_ARRAY_BUFFER, _uiBuffer);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(_CPoints) + sizeof(_CColors), NULL, GL_STATIC_DRAW);
@@ -104,6 +110,14 @@ void CFlighter::CreateBufferObject(int type)
 
 		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(_SPoints), _SPoints);
 		glBufferSubData(GL_ARRAY_BUFFER, sizeof(_SPoints), sizeof(_SColors), _SColors);
+	}
+	else if (type == 5) {
+		glGenBuffers(1, &_uiBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, _uiBuffer);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(_MPoints) + sizeof(_MColors), NULL, GL_STATIC_DRAW);
+
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(_MPoints), _MPoints);
+		glBufferSubData(GL_ARRAY_BUFFER, sizeof(_MPoints), sizeof(_MColors), _MColors);
 	}
 	else {
 		glGenBuffers(1, &_uiBuffer);
@@ -135,6 +149,11 @@ void CFlighter::setShader(mat4& mxView, mat4& mxProjection, int type, GLuint uiS
 		GLuint vColor = glGetAttribLocation(_uiProgram, "vColor");
 		glEnableVertexAttribArray(vColor);
 		glVertexAttribPointer(vColor, 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizeof(_SPoints)));
+	}
+	else if (type == 5) {
+		GLuint vColor = glGetAttribLocation(_uiProgram, "vColor");
+		glEnableVertexAttribArray(vColor);
+		glVertexAttribPointer(vColor, 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizeof(_MPoints)));
 	}
 	else {
 		GLuint vColor = glGetAttribLocation(_uiProgram, "vColor");
@@ -200,6 +219,14 @@ void CFlighter::setColor(GLfloat vColor[4], int index)
 			_CColors[i].z = vColor[2];
 			_CColors[i].w = vColor[3];
 		}
+		break;
+	case 5:
+		for (int i = 0; i < MISSILE_NUM; i++) {
+			_MColors[i].x = vColor[0];
+			_MColors[i].y = vColor[1];
+			_MColors[i].z = vColor[2];
+			_MColors[i].w = vColor[3];
+		}
 	case 4:
 		for (int i = 0; i < FIVESTART_NUM; i++) {
 			_SColors[i].x = vColor[0];
@@ -215,6 +242,10 @@ void CFlighter::setColor(GLfloat vColor[4], int index)
 	else if (index == 4) {
 		glBindBuffer(GL_ARRAY_BUFFER, _uiBuffer);
 		glBufferSubData(GL_ARRAY_BUFFER, sizeof(_SPoints), sizeof(_SColors), _SColors);
+	}
+	else if (index == 5) {
+		glBindBuffer(GL_ARRAY_BUFFER, _uiBuffer);
+		glBufferSubData(GL_ARRAY_BUFFER, sizeof(_MPoints), sizeof(_MColors), _MColors);
 	}
 	else {
 		glBindBuffer(GL_ARRAY_BUFFER, _uiBuffer);
@@ -271,6 +302,7 @@ void CFlighter::draw(int type)
 	}
 	if (type == 3) glDrawArrays(GL_POLYGON, 0, CIRCLE_NUM);	
 	else if (type == 4) glDrawArrays(GL_POLYGON, 0, FIVESTART_NUM);
+	else if(type ==5 ) glDrawArrays(GL_POLYGON, 0, MISSILE_NUM);
 	else glDrawArrays(GL_TRIANGLES, 0, QUAD_NUM);
 }
 
@@ -292,4 +324,12 @@ void CFlighter::drawW()
 		_bUpdateProj = false;
 	}
 	glDrawArrays(GL_TRIANGLES, 0, QUAD_NUM);
+}
+
+void CFlighter::setPos(vec3 Pos) {
+	_mxPos = Pos;
+}
+
+vec3 CFlighter::getPos() {
+	return _mxPos;
 }
