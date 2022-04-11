@@ -45,11 +45,11 @@
     <ClCompile Include="Flighter.cpp">
       <Filter>原始程式檔</Filter>
     </ClCompile>
-    <ClCompile Include="Example4.cpp">
+    <ClCompile Include="Common\CBackGround.cpp">
       <Filter>Common</Filter>
     </ClCompile>
-    <ClCompile Include="Example1.cpp">
-      <Filter>原始程式檔</Filter>
+    <ClCompile Include="Common\Enemy.cpp">
+      <Filter>Common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -78,6 +78,12 @@
       <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="Common\CFlighter.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\CBackGround.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\Enemy.h">
       <Filter>Common</Filter>
     </ClInclude>
   </ItemGroup>

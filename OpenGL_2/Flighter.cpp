@@ -4,6 +4,7 @@
 
 #include "header/Angel.h"
 #include "Common/CFlighter.h"
+#include "Common/CBackGround.h"
 
 #define SPACE_KEY 32
 #define SCREEN_SIZE 800
@@ -22,12 +23,14 @@ float g_fPlayer[FLIGHTER_SIZE][3];
 mat4 g_initmxS[4];
 mat4 g_initmxT[4];
 mat4 g_Flightercenter = Translate(-0.8f, -1.4f, 0.0f);
+
 //for five star to protect flighter
 CFlighter* g_FiveStar;
 float g_fFiveStar[3];
 mat4 g_finitmxT;
 GLfloat g_fFAngle = 0;
 GLfloat g_fFDir = 1;
+
 //for missile
 CFlighter* g_Missile[20];
 float g_fMissile[20][3];
@@ -40,6 +43,20 @@ int _iOut = 0;
 int _iNext = 0;
 float _fShootTime = 0;
 float _fShootSpeed = 5;
+
+//for cloud
+CBackGround* g_Cloud[4];
+float g_fCloud[4][3];
+int g_CloudType[4];
+int g_fSpeedCloud[4];
+
+//for 3-2 eat something change
+CFlighter* g_ChangeEat[3];
+float g_fChangeEat[3][3];
+float CountTime;
+float g_fEatDir[3][3];
+bool g_bGenerate[3] = { false };
+bool G_bGenDel[3] = { false };
 //for mouse move
 mat4 mxGT;
 
@@ -48,16 +65,20 @@ mat4 g_mxModelView(1.0f);
 mat4 g_mxIdentity(1.0f);
 mat4 g_mxProjection;
 
+
+
 // Mouse motion
 GLfloat g_fTx = 0, g_fTy = 0;
 
 //----------------------------------------------------------------------------
 // 函式的原型宣告
 extern void IdleProcess();
-void CreateQuadRelationship();
-void ProtectRotation(float delta);
-void Shoot(float delta);
-
+void CreateQuadRelationship(); //1-1
+void ProtectRotation(float delta); //1-2
+void Shoot(float delta); //1-3 1-4
+void CloudMove(float delta); //1-5
+void EatChange_Generate(int type);//3-2
+void EatChangeMove(int type, float delta);//4-1
 void init(void)
 {
 	//  產生 projection 矩陣，此處為產生正投影矩陣
@@ -66,7 +87,9 @@ void init(void)
 	// 必須在 glewInit(); 執行完後,在執行物件實體的取得
 	CreateQuadRelationship();
 
-	glClearColor(0.0, 0.0, 0.0, 1.0); // black background
+	glClearColor(0.2, 0.75f, 0.85f, 1.0); // black background
+
+
 }
 
 //----------------------------------------------------------------------------
@@ -74,13 +97,21 @@ void init(void)
 void GL_Display(void)
 {
 	glClear(GL_COLOR_BUFFER_BIT); // clear the window
+	for (int i = 0; i < 4; i++) {
+		g_Cloud[i]->draw(g_CloudType[i]);
+	}
+	for (int i = 0; i < _iOut; i++) {
+		g_Missile[i]->draw(5);
+	}
+	for (int i = 0; i < 3; i++) {
+		if (g_bGenerate[i] && !G_bGenDel[i]) {
+			g_ChangeEat[i]->draw(3);
+		}
+	}
 	for (int i = 0; i < FLIGHTER_SIZE; i++) {
 		g_Player[i]->draw(1);
 	}
 	g_FiveStar->draw(4);
-	for (int i = 0; i < _iOut; i++) {
-		g_Missile[i]->draw(5);
-	}
 	glutSwapBuffers();	// 交換 Frame Buffer
 }
 
@@ -88,6 +119,15 @@ void onFrameMove(float delta)
 {
 	ProtectRotation(delta);
 	Shoot(delta);
+	CloudMove(delta);
+	//for 3-2 eat change
+	CountTime += delta;
+	if (CountTime > 2.0f && g_bGenerate[0] == false) {
+		EatChange_Generate(0);
+	}
+	if (g_bGenerate[0] && G_bGenDel[0]==false) {
+		EatChangeMove(0, delta);
+	}
 	GL_Display();
 }
 
@@ -154,23 +194,41 @@ void CreateQuadRelationship()
 	
 	//for fivestar create
 	g_FiveStar = new CFlighter(4);
-	vColor = vec4(1, 24, 141, 1);
+	vColor = vec4(0.11,0.25, 0.51, 1);
 	g_FiveStar->setColor(vColor,4);
 	g_fFiveStar[0] = -3.0f; g_fFiveStar[1] = -1.25f; g_fFiveStar[2] = 0;
 	g_finitmxT = Translate(g_fFiveStar[0], g_fFiveStar[1], g_fFiveStar[2]);
 	g_FiveStar->setShader(g_mxModelView, g_mxProjection, 4);
 	g_FiveStar->setTRSMatrix(g_finitmxT);
 
-	//for missile
-	g_Missile[0] = new CFlighter(5);
-	vColor = vec4(1, 0, 0, 1);
-	g_Missile[0]->setColor(vColor, 5);
-	g_fMissile[0][0] = -3.0f; g_fMissile[0][1] = -1.25f; g_fMissile[0][2] = 0;
-	g_minitmxT = Translate(g_fMissile[0][0], g_fMissile[0][1], g_fMissile[0][2]);
-	g_Missile[0]->setShader(g_mxModelView, g_mxProjection, 5);
-	g_Missile[0]->setTRSMatrix(g_minitmxT);
-}
+	//for background 1-4
+	float min = -13.0f;
+	float max = 13.0f;
 
+	int _imin = 3;
+	int _imax = 10;
+
+	/* 產生 [min , max] 的整數亂數 */
+	srand(time(NULL));
+	for (int i = 0; i < 4; i++) {
+		float x = (max - min) * rand() / (RAND_MAX + 1.0) + min;
+		int _ix = rand() % (_imax - _imin + 1) + _imin;
+		int type = 0;
+		if (int(x) % 2 == 0) type = 1;
+		else type = 2;
+		g_Cloud[i] = new CBackGround(type);
+		g_CloudType[i] = type;
+		vColor = vec4(191, 218, 218, 0.0);
+		g_Cloud[i]->setColor(vColor, 2);
+		g_fCloud[i][0] = x; g_fCloud[i][1] = 13.0f; g_fCloud[i][2] = 0.0f;
+		mat4 mxCT = Translate(g_fCloud[i][0], g_fCloud[i][1], g_fCloud[i][2]);
+		g_fSpeedCloud[i] = _ix;
+		g_Cloud[i]->setShader(g_mxModelView, g_mxProjection);
+		g_Cloud[i]->setTRSMatrix(mxCT);
+	}
+	
+}
+//1-2
 void ProtectRotation(float delta) {
 	mat4 mxR;
 	g_fFAngle += delta * 90.0f;
@@ -179,6 +237,8 @@ void ProtectRotation(float delta) {
 	mxR = RotateZ(g_fFAngle);
 	g_FiveStar->setTRSMatrix( mxGT  * g_Flightercenter * g_initmxS[0] * mxR * g_finitmxT);
 }
+//---------------------------------------------------------------------------------------------------------------------
+//1-3 1-4
 void Shoot(float delta) {
 	mat4 mxT;
 	vec4 vColor = vec4(1, 0, 0, 1);
@@ -222,6 +282,59 @@ void Shoot(float delta) {
 		}
 	}
 }
+
+// for 1-5
+void CloudMove(float delta) {
+	srand(time(NULL));
+	/* 指定亂數範圍 */
+	int _imin = 3;
+	int _imax = 10;
+
+	float _fmin = -13.0f;
+	float _fmax = 13.0f;
+	
+	mat4 mxT;
+	for (int i = 0; i < 4; i++) {
+		float _fx = (_fmax - _fmin) * rand() / (RAND_MAX + 1.0) + _fmin;
+		g_fCloud[i][1] -= delta * g_fSpeedCloud[i];
+		if (g_fCloud[i][1] < -13.0f) {
+			g_fCloud[i][0] = _fx; g_fCloud[i][1] = 13.0f;
+			g_fSpeedCloud[i] = rand() % (_imax - _imin + 1) + _imin;
+		}
+		mxT = Translate(g_fCloud[i][0], g_fCloud[i][1], g_fCloud[i][2]);
+		g_Cloud[i]->setTRSMatrix(mxT);
+	}
+}
+
+//for 3-2 eat change
+void EatChange_Generate(int type) {
+	g_bGenerate[type] = true;
+	vec4 vColor = vec4(1, 0, 0, 1);
+	mat4 mxT;
+	g_ChangeEat[type] = new CFlighter(3);
+	vColor = vec4(type*0.2, type * 0.2, 0, 1);
+	g_ChangeEat[type]->setColor(vColor, 3);
+	g_fChangeEat[type][0] = 0.0f; g_fChangeEat[type][1] = 13.0f; g_fChangeEat[type][2] = 0;
+	mxT = Translate(g_fChangeEat[type][0], g_fChangeEat[type][1], g_fChangeEat[type][2]);
+	g_ChangeEat[type]->setShader(g_mxModelView, g_mxProjection, 3);
+	g_ChangeEat[type]->setTRSMatrix(mxT);
+}
+float count;
+void EatChangeMove(int type, float delta) {
+	mat4 newmxT;
+	count += delta;
+	g_fEatDir[type][0] += sin(count)/100;
+	g_fEatDir[type][1] += delta * 2;
+	newmxT = Translate(g_fChangeEat[type][0] + g_fEatDir[type][0], g_fChangeEat[type][1] - g_fEatDir[type][1], g_fChangeEat[type][2]);
+	g_ChangeEat[type]->setPos(vec3(g_fChangeEat[type][0] + g_fEatDir[type][0], g_fChangeEat[type][1] - g_fEatDir[type][1], g_fChangeEat[type][2]));
+	g_ChangeEat[type]->setTRSMatrix(newmxT);
+	printf("(%f,%f)\n", g_ChangeEat[type]->getPos().x, g_ChangeEat[type]->getPos().y);
+	if (g_ChangeEat[type]->getPos().y < -13.0f) {
+		G_bGenDel[type] = true;
+		delete g_ChangeEat[type];
+	}
+}
+//----------------------------------------------------------------------------------------------------------------------------
 void UpdateMatrix()
 {
 	
@@ -248,6 +361,10 @@ void Win_Keyboard(unsigned char key, int x, int y)
 		for (int i = 0; i < _iOut; i++) {
 			delete g_Missile[i];
 		}
+		for (int i = 0; i < 4; i++) {
+			delete g_Cloud[i];
+		}
+		delete g_FiveStar;
 		exit(EXIT_SUCCESS);
 		break;
 	}
@@ -269,6 +386,7 @@ void Win_Mouse(int button, int state, int x, int y) {
 	}
 }
 // The passive motion callback for a window is called when the mouse moves within the window while no mouse buttons are pressed.
+//1-1
 void Win_PassiveMotion(int x, int y) {
 	mat4  mxT;
 

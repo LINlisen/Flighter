@@ -38,9 +38,15 @@ CFlighter::CFlighter(int type)
 		break;
 	//for circle
 	case 3 :
-		for (int i = 0; i < CIRCLE_NUM; i++) {
-			_CPoints[i].x = RADIUS * cosf(M_PI * 2.0f * i / CIRCLE_NUM);
-			_CPoints[i].y = RADIUS * sinf(M_PI * 2.0f * i / CIRCLE_NUM);
+		for (int i = 0; i < 400; i++) {
+			_CPoints[i].x = RADIUS * cosf(M_PI * 2.0f * i / 400);
+			_CPoints[i].y = RADIUS * sinf(M_PI * 2.0f * i / 400);
+			_CPoints[i].z = 0.0f;
+			_CPoints[i].w = 1.0f;
+		}
+		for (int i = 400; i < CIRCLE_NUM; i++) {
+			_CPoints[i].x = cosf(M_PI * 2.0f * i / 400);
+			_CPoints[i].y = sinf(M_PI * 2.0f * i / 400);
 			_CPoints[i].z = 0.0f;
 			_CPoints[i].w = 1.0f;
 		}
@@ -49,19 +55,19 @@ CFlighter::CFlighter(int type)
 	case 4 : 
 		_SPoints[0].x = RADIUS * cos(90 * 2 * PI / 360);
 		_SPoints[0].y = RADIUS * sin(90 * 2 * PI / 360);
-		_SPoints[0].z = 0; _SPoints[0].w = 1.0f;
+		_SPoints[0].z = -1.0f; _SPoints[0].w = 1.0f;
 		_SPoints[1].x = RADIUS * cos(306 * 2 * PI / 360);
 		_SPoints[1].y = RADIUS * sin(306 * 2 * PI / 360);
-		_SPoints[1].z = 0; _SPoints[1].w = 1.0f;
+		_SPoints[1].z = -1.0f; _SPoints[1].w = 1.0f;
 		_SPoints[2].x = RADIUS * cos(162 * 2 * PI / 360);
 		_SPoints[2].y = RADIUS * sin(162* 2 * PI / 360);
-		_SPoints[2].z = 0; _SPoints[2].w = 1.0f;
+		_SPoints[2].z = -1.0f; _SPoints[2].w = 1.0f;
 		_SPoints[3].x = RADIUS * cos(18* 2 * PI / 360);
 		_SPoints[3].y = RADIUS * sin(18* 2 * PI / 360);
-		_SPoints[3].z = 0; _SPoints[3].w = 1.0f;
+		_SPoints[3].z = -1.0f; _SPoints[3].w = 1.0f;
 		_SPoints[4].x = RADIUS * cos(234* 2 * PI / 360);
 		_SPoints[4].y = RADIUS * sin(234* 2 * PI / 360);
-		_SPoints[4].z = 0; _SPoints[4].w = 1.0f;
+		_SPoints[4].z = -1.0f; _SPoints[4].w = 1.0f;
 		break;
 	//for MISSILE_NUM
 	case 5:
@@ -214,9 +220,9 @@ void CFlighter::setColor(GLfloat vColor[4], int index)
 		break;
 	case 3:
 		for (int i = 0; i < CIRCLE_NUM; i++) {
-			_CColors[i].x = vColor[0];
-			_CColors[i].y = vColor[1];
-			_CColors[i].z = vColor[2];
+			_CColors[i].x = vColor[0]+ i * 0.0008f + 0.15f;
+			_CColors[i].y = vColor[1]+ i * 0.0006f + 0.3f;
+			_CColors[i].z = vColor[2]+ 0.3f;
 			_CColors[i].w = vColor[3];
 		}
 		break;
