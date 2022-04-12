@@ -127,7 +127,12 @@ void onFrameMove(float delta)
 	}
 	if (g_bGenerate[0] && G_bGenDel[0]==false) {
 		EatChangeMove(0, delta);
+		if (g_ChangeEat[0]->CheckCollider(g_Player[0]->getPos().x, g_Player[0]->getPos().y, 0.4f)) {
+			G_bGenDel[0] = true;
+			delete g_ChangeEat[0];
+		}
 	}
+	
 	GL_Display();
 }
 
@@ -397,6 +402,7 @@ void Win_PassiveMotion(int x, int y) {
 		mxT = Translate(g_fPlayer[i][0], g_fPlayer[i][1], g_fPlayer[i][2]);
 		g_Player[i]->setTRSMatrix(mxGT * g_initmxT[i]*g_initmxS[i]);
 	}
+	g_Player[0]->setPos(vec3(-0.8f + g_fTx, -1.4f + g_fTy, 0.0f));
 }
 // The motion callback for a window is called when the mouse moves within the window while one or more mouse buttons are pressed.
 void Win_MouseMotion(int x, int y) {

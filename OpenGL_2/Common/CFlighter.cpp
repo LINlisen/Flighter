@@ -288,6 +288,7 @@ void CFlighter::setColor(GLfloat vColor[4], int index)
 //	glBufferSubData(GL_ARRAY_BUFFER, sizeof(_Points), sizeof(_Colors), _Colors);
 //}
 
+
 void CFlighter::draw(int type)
 {
 	glUseProgram(_uiProgram);
@@ -338,4 +339,9 @@ void CFlighter::setPos(vec3 Pos) {
 
 vec3 CFlighter::getPos() {
 	return _mxPos;
+}
+
+bool  CFlighter::CheckCollider(float x, float y, float r) {
+	if (r * r > (x - _mxPos.x) * (x - _mxPos.x) + (y - _mxPos.y) * (y - _mxPos.y)) return true;
+	else return false;
 }

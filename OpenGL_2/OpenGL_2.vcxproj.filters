@@ -51,6 +51,9 @@
     <ClCompile Include="Common\Enemy.cpp">
       <Filter>Common</Filter>
     </ClCompile>
+    <ClCompile Include="Common\CShape.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Header\Angel.h">
@@ -84,6 +87,9 @@
       <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="Common\Enemy.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\CShape.h">
       <Filter>Common</Filter>
     </ClInclude>
   </ItemGroup>

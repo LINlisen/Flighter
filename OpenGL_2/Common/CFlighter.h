@@ -46,6 +46,8 @@ private:
 
 	void CreateBufferObject(int type);
 public:
+	
+
 	CFlighter(int type);
 
 	void setShader(mat4& mxModelView, mat4& mxProjection, int type, GLuint uiShaderHandle = MAX_UNSIGNED_INT);
@@ -58,6 +60,7 @@ public:
 	void setVtxColors(GLfloat vLFColor[], GLfloat vLRColor[], GLfloat vTRColor[], GLfloat vTLColor[]); // four Vertices' Color
 	void setPos(vec3 _mxPos);
 	vec3 getPos();
+	bool CheckCollider(float x, float y, float r);
 	void draw(int type);
 	void drawW();
 };
