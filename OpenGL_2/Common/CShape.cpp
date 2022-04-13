@@ -130,3 +130,15 @@ void CShape::drawW() {
 	}
 	glDrawArrays(GL_TRIANGLES, 0, _nVtx);
 }
+void CShape::setPos(vec3 Pos) {
+	_mxPos = Pos;
+}
+
+vec3 CShape::getPos() {
+	return _mxPos;
+}
+
+bool  CShape::CheckCollider(float x, float y, float r) {
+	if (r * r > (x - _mxPos.x) * (x - _mxPos.x) + (y - _mxPos.y) * (y - _mxPos.y)) return true;
+	else return false;
+}

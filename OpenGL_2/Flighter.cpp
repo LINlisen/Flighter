@@ -5,6 +5,7 @@
 #include "header/Angel.h"
 #include "Common/CFlighter.h"
 #include "Common/CBackGround.h"
+#include "Common/Enemy.h"
 
 #define SPACE_KEY 32
 #define SCREEN_SIZE 800
@@ -50,6 +51,19 @@ float g_fCloud[4][3];
 int g_CloudType[4];
 int g_fSpeedCloud[4];
 
+//for 2-1 2-2
+
+Enemy* g_Enemy[10];
+int g_EnemyType[10];
+int _iGenCount;
+int _iInverse[10] = { 1 };
+float g_fEnemy[10][3];
+float g_fEnemyDir[10][3];
+float g_fEnemyCount[10];
+float EnemyTime = 0.0f;
+bool _bEnemyGen[10] = { false };
+bool _bEnemyDel[10] = { false };
+
 //for 3-2
 CFlighter* g_UpgradeOne[2];
 float g_fUpgradeOne[2][3];
@@ -79,11 +93,13 @@ GLfloat g_fTx = 0, g_fTy = 0;
 // 函式的原型宣告
 extern void IdleProcess();
 void CreateQuadRelationship(); //1-1
-void ProtectRotation(float delta); //1-2
-void Shoot(float delta); //1-3 1-4
-void CloudMove(float delta); //1-5
-void EatChange_Generate(int type);//3-2
-void EatChangeMove(int type, float delta);//4-1
+void ProtectRotation(float); //1-2
+void Shoot(float); //1-3 1-4
+void CloudMove(float); //1-5
+void EatChange_Generate(int);//3-2
+void EatChangeMove(int , float);//4-1
+void EnemyGen(int,int);
+void EnemyMove(int,int,float);
 void init(void)
 {
 	//  產生 projection 矩陣，此處為產生正投影矩陣
@@ -91,7 +107,6 @@ void init(void)
 
 	// 必須在 glewInit(); 執行完後,在執行物件實體的取得
 	CreateQuadRelationship();
-
 	glClearColor(0.2, 0.75f, 0.85f, 1.0); // black background
 
 
@@ -132,6 +147,11 @@ void GL_Display(void)
 			
 		}
 	}
+	for (int i = 0; i < _iGenCount; i++) {
+		if (_bEnemyGen[i] && !(_bEnemyDel[i])) {
+			g_Enemy[i]->draw();
+		}
+	}
 	g_FiveStar->draw(4);
 	glutSwapBuffers();	// 交換 Frame Buffer
 }
@@ -143,6 +163,7 @@ void onFrameMove(float delta)
 	CloudMove(delta);
 	//for 3-2 eat change
 	CountTime += delta;
+	EnemyTime += delta;
 	if (CountTime > 2.0f && g_bGenerate[0] == false) {
 		EatChange_Generate(0);
 	}
@@ -159,7 +180,19 @@ void onFrameMove(float delta)
 			}
 		}
 	}
-	
+	// Enemy Generate
+	if (EnemyTime > 2.0f && !_bEnemyGen[_iGenCount] && _iGenCount<10) {
+
+		EnemyGen(_iGenCount, 1);
+		_iGenCount++;
+		EnemyTime -= 2.0f;
+	}
+	for (int i = 0; i < 10; i++) {
+		if (g_Enemy[i] == nullptr) break;
+		if (_bEnemyGen[i] && _bEnemyDel[i] == false) {
+			EnemyMove(1,i,delta);
+		}
+	}
 	
 	GL_Display();
 }
@@ -371,10 +404,57 @@ void EatChangeMove(int type, float delta) {
 	newmxT = Translate(g_fChangeEat[type][0] + g_fEatDir[type][0], g_fChangeEat[type][1] - g_fEatDir[type][1], g_fChangeEat[type][2]);
 	g_ChangeEat[type]->setPos(vec3(g_fChangeEat[type][0] + g_fEatDir[type][0], g_fChangeEat[type][1] - g_fEatDir[type][1], g_fChangeEat[type][2]));
 	g_ChangeEat[type]->setTRSMatrix(newmxT);
-	printf("(%f,%f)\n", g_ChangeEat[type]->getPos().x, g_ChangeEat[type]->getPos().y);
+	//printf("(%f,%f)\n", g_ChangeEat[type]->getPos().x, g_ChangeEat[type]->getPos().y);
 	if (g_ChangeEat[type]->getPos().y < -13.0f) {
 		G_bGenDel[type] = true;
 		delete g_ChangeEat[type];
+	}
+}
+//for 2-1-> 2-3
+void EnemyGen(int index,int type) {
+	int _imin = 1;
+	int _imax = 1;
+	vec4 vColor = vec4(1, 0, 0, 1);
+	mat4 mxT;
+	srand(time(NULL));
+	int _ix = rand() % (_imax - _imin + 1) + _imin;
+	switch (type)
+	{
+	case 1:
+		_bEnemyGen[index] = true;
+		g_Enemy[index] = new Enemy(1);
+		g_EnemyType[index] = 1;
+		g_Enemy[index]->setColor(vColor);
+		g_fEnemy[index][0] = -12.0f; g_fEnemy[index][1] = 11; g_fEnemy[index][2] = 0;
+		mxT = Translate(g_fEnemy[index][0], g_fEnemy[index][1], g_fEnemy[index][2]);
+		break;
+
+	case 2:
+		break;
+	case 3:
+		break;
+	}
+	g_Enemy[index]->setPos(vec3(g_fEnemy[index][0], g_fEnemy[index][1], g_fEnemy[index][2] = 0));
+	g_Enemy[index]->setTRSMatrix(mxT);
+	g_Enemy[index]->setShader(g_mxModelView, g_mxProjection);
+}
+
+void EnemyMove(int type, int index,float delta) {
+	mat4 mxT;
+
+	switch (type)
+	{
+	case 1:
+		if (g_Enemy[index]->getPos().x >= 12.0f)  _iInverse[index] = -1;
+		if (g_Enemy[index]->getPos().x <= -12.0f)  _iInverse[index] = 1;
+		g_fEnemyCount[index] = delta * 2 * _iInverse[index] + g_fEnemyCount[index];
+		g_fEnemyDir[index][0] = g_fEnemyCount[index];
+		g_fEnemyDir[index][1] = sin(g_fEnemyCount[index]*0.5*PI);
+		mxT = Translate(g_fEnemy[index][0] + g_fEnemyDir[index][0], g_fEnemy[index][1] + g_fEnemyDir[index][1], g_fEnemy[index][2]);
+		g_Enemy[index]->setPos(vec3(g_fEnemy[index][0] + g_fEnemyDir[index][0], g_fEnemy[index][1] + g_fEnemyDir[index][1], g_fEnemy[index][2]));
+		g_Enemy[index]->setTRSMatrix(mxT);
+		printf("(%f,%f,%d,%d)\n", g_Enemy[index]->getPos().x, g_fEnemyCount[index], _iInverse[index],index);
+		break;
 	}
 }
 //----------------------------------------------------------------------------------------------------------------------------

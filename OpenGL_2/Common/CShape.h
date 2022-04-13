@@ -34,6 +34,8 @@ public:
 	// 紀錄是否有矩陣的更新
 	bool  _bUpdateMV;
 	bool  _bUpdateProj;
+	//Pos
+	vec3 _mxPos;
 
 	void CreateBufferObject(int nVtx);
 
@@ -54,6 +56,8 @@ public:
 	virtual void draw() = 0;
 	virtual void drawW() = 0; // Drawing without setting shaders
 
-	
+	void setPos(vec3 _mxPos);
+	vec3 getPos();
+	bool CheckCollider(float x, float y, float r);
 
 };
