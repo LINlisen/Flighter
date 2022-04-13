@@ -43,13 +43,17 @@ int _iOut = 0;
 int _iNext = 0;
 float _fShootTime = 0;
 float _fShootSpeed = 5;
-
+float _fShootDur = 0.5f;
 //for cloud
 CBackGround* g_Cloud[4];
 float g_fCloud[4][3];
 int g_CloudType[4];
 int g_fSpeedCloud[4];
 
+//for 3-2
+CFlighter* g_UpgradeOne[2];
+float g_fUpgradeOne[2][3];
+bool _bUpgrade[3] = { false };
 //for 3-2 eat something change
 CFlighter* g_ChangeEat[3];
 float g_fChangeEat[3][3];
@@ -57,6 +61,7 @@ float CountTime;
 float g_fEatDir[3][3];
 bool g_bGenerate[3] = { false };
 bool G_bGenDel[3] = { false };
+
 //for mouse move
 mat4 mxGT;
 
@@ -111,6 +116,22 @@ void GL_Display(void)
 	for (int i = 0; i < FLIGHTER_SIZE; i++) {
 		g_Player[i]->draw(1);
 	}
+	for (int i = 0; i < 3; i++) {
+		if (_bUpgrade[i]) {
+			switch (i)
+			{
+			case 0:
+				g_UpgradeOne[0]->draw(6);
+				g_UpgradeOne[1]->draw(6);
+				break;
+			case 1:
+				break;
+			case 2:
+				break;
+			}
+			
+		}
+	}
 	g_FiveStar->draw(4);
 	glutSwapBuffers();	// ец┤л Frame Buffer
 }
@@ -125,13 +146,20 @@ void onFrameMove(float delta)
 	if (CountTime > 2.0f && g_bGenerate[0] == false) {
 		EatChange_Generate(0);
 	}
-	if (g_bGenerate[0] && G_bGenDel[0]==false) {
-		EatChangeMove(0, delta);
-		if (g_ChangeEat[0]->CheckCollider(g_Player[0]->getPos().x, g_Player[0]->getPos().y, 0.4f)) {
-			G_bGenDel[0] = true;
-			delete g_ChangeEat[0];
+	for (int i = 0; i < 3; i++) {
+		if (g_ChangeEat[i] == nullptr) break;
+		if (g_bGenerate[i] && G_bGenDel[i] == false) {
+			EatChangeMove(i, delta);
+			if (g_ChangeEat[i]->CheckCollider(g_Player[0]->getPos().x, g_Player[0]->getPos().y, 0.4f)) {
+				G_bGenDel[i] = true;
+				delete g_ChangeEat[i];
+				_bUpgrade[i] = true;
+				_fShootSpeed = 15;
+				_fShootDur = 0.4f;
+			}
 		}
 	}
+	
 	
 	GL_Display();
 }
@@ -196,7 +224,17 @@ void CreateQuadRelationship()
 		}
 		g_Player[i]->setShader(g_mxModelView, g_mxProjection,1);
 	}
-	
+	//for flighter upgrade one  3-2
+	mat4 mxUT;
+	for (int i = 0; i < 2; i++) {
+		g_UpgradeOne[i] = new  CFlighter(6);
+		vColor = vec4(0, 0, 1, 1);
+		g_UpgradeOne[i]->setColor(vColor, 6);
+		g_fUpgradeOne[i][0] = 0+i*0.6; g_fUpgradeOne[i][1] = 0; g_fUpgradeOne[i][2] = 0;
+		mxUT = Translate(g_fUpgradeOne[i][0], g_fUpgradeOne[i][1], g_fUpgradeOne[i][2]);
+		g_UpgradeOne[i]->setTRSMatrix(mxUT);
+		g_UpgradeOne[i]->setShader(g_mxModelView, g_mxProjection, 6);
+	}
 	//for fivestar create
 	g_FiveStar = new CFlighter(4);
 	vColor = vec4(0.11,0.25, 0.51, 1);
@@ -248,7 +286,7 @@ void Shoot(float delta) {
 	mat4 mxT;
 	vec4 vColor = vec4(1, 0, 0, 1);
 	_fShootTime += delta;
-	if (_fShootTime > 0.5) {
+	if (_fShootTime > _fShootDur) {
 		g_Missile[_iOut] = new CFlighter(5);
 		vColor = vec4(1, 0, 0, 1);
 		g_Missile[_iOut]->setColor(vColor, 5);
@@ -401,6 +439,10 @@ void Win_PassiveMotion(int x, int y) {
 	for (int i = 0; i < FLIGHTER_SIZE; i++) {
 		mxT = Translate(g_fPlayer[i][0], g_fPlayer[i][1], g_fPlayer[i][2]);
 		g_Player[i]->setTRSMatrix(mxGT * g_initmxT[i]*g_initmxS[i]);
+	}
+	for (int i = 0; i < 2; i++) {
+		mxT = Translate(g_fUpgradeOne[i][0], g_fUpgradeOne[i][1], g_fUpgradeOne[i][2]);
+		g_UpgradeOne[i]->setTRSMatrix(mxT * mxGT);
 	}
 	g_Player[0]->setPos(vec3(-0.8f + g_fTx, -1.4f + g_fTy, 0.0f));
 }

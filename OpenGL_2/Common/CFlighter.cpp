@@ -78,6 +78,17 @@ CFlighter::CFlighter(int type)
 			_MPoints[i].w = 1.0f;
 		}
 		break;
+	//for Flighter Upgrade 1
+	case 6:
+		for (int i = 0; i < UPGRADE_ONE; i++) {
+			//-0.8f, -1.4f, 0.0f
+			_UOPoints[0] = vec4(-1.2f, 1.0f, 0.0f, 1.0f);
+			_UOPoints[1] = vec4(-1.2f, -1.4f, 0.0f, 1.0f);
+			_UOPoints[2] = vec4(-1.0f, -1.4f, 0.0f, 1.0f);
+			_UOPoints[3] = vec4(-1.2f, 1.0f, 0.0f, 1.0f);
+			_UOPoints[4] = vec4(-1.0f, 1.0f, 0.0f, 1.0f);
+			_UOPoints[5] = vec4(-1.0f, -1.4f, 0.0f, 1.0f);
+		}
 	}
 	
 
@@ -125,6 +136,14 @@ void CFlighter::CreateBufferObject(int type)
 		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(_MPoints), _MPoints);
 		glBufferSubData(GL_ARRAY_BUFFER, sizeof(_MPoints), sizeof(_MColors), _MColors);
 	}
+	else if (type == 6) {
+		glGenBuffers(1, &_uiBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, _uiBuffer);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(_UOPoints) + sizeof(_UOColors), NULL, GL_STATIC_DRAW);
+
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(_UOPoints), _UOPoints);
+		glBufferSubData(GL_ARRAY_BUFFER, sizeof(_UOPoints), sizeof(_UOColors), _UOColors);
+	}
 	else {
 		glGenBuffers(1, &_uiBuffer);
 		glBindBuffer(GL_ARRAY_BUFFER, _uiBuffer);
@@ -160,6 +179,11 @@ void CFlighter::setShader(mat4& mxView, mat4& mxProjection, int type, GLuint uiS
 		GLuint vColor = glGetAttribLocation(_uiProgram, "vColor");
 		glEnableVertexAttribArray(vColor);
 		glVertexAttribPointer(vColor, 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizeof(_MPoints)));
+	}
+	else if (type == 6) {
+		GLuint vColor = glGetAttribLocation(_uiProgram, "vColor");
+		glEnableVertexAttribArray(vColor);
+		glVertexAttribPointer(vColor, 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizeof(_UOPoints)));
 	}
 	else {
 		GLuint vColor = glGetAttribLocation(_uiProgram, "vColor");
@@ -233,6 +257,7 @@ void CFlighter::setColor(GLfloat vColor[4], int index)
 			_MColors[i].z = vColor[2];
 			_MColors[i].w = vColor[3];
 		}
+		break;
 	case 4:
 		for (int i = 0; i < FIVESTART_NUM; i++) {
 			_SColors[i].x = vColor[0];
@@ -240,6 +265,15 @@ void CFlighter::setColor(GLfloat vColor[4], int index)
 			_SColors[i].z = vColor[2];
 			_SColors[i].w = vColor[3];
 		}
+		break;
+	case 6:
+		for (int i = 0; i < UPGRADE_ONE; i++) {
+			_UOColors[i].x = vColor[0];
+			_UOColors[i].y = vColor[1];
+			_UOColors[i].z = vColor[2];
+			_UOColors[i].w = vColor[3];
+		}
+		break;
 	}
 	if (index == 3) {
 		glBindBuffer(GL_ARRAY_BUFFER, _uiBuffer);
@@ -253,41 +287,16 @@ void CFlighter::setColor(GLfloat vColor[4], int index)
 		glBindBuffer(GL_ARRAY_BUFFER, _uiBuffer);
 		glBufferSubData(GL_ARRAY_BUFFER, sizeof(_MPoints), sizeof(_MColors), _MColors);
 	}
+	else if (index == 6) {
+		glBindBuffer(GL_ARRAY_BUFFER, _uiBuffer);
+		glBufferSubData(GL_ARRAY_BUFFER, sizeof(_UOPoints), sizeof(_UOColors), _UOColors);
+	}
 	else {
 		glBindBuffer(GL_ARRAY_BUFFER, _uiBuffer);
 		glBufferSubData(GL_ARRAY_BUFFER, sizeof(_Points), sizeof(_Colors), _Colors);
 	}
 	
 }
-
-//void CFlighter::setVtxColors(GLfloat vLFColor[], GLfloat vLRColor[], GLfloat vTRColor[], GLfloat vTLColor[])
-//{
-//	_Colors[0].x = vLFColor[0];
-//	_Colors[0].y = vLFColor[1];
-//	_Colors[0].z = vLFColor[2];
-//	_Colors[0].w = vLFColor[3];
-//	_Colors[3] = _Colors[0];
-//
-//	_Colors[1].x = vLRColor[0];
-//	_Colors[1].y = vLRColor[1];
-//	_Colors[1].z = vLRColor[2];
-//	_Colors[1].w = vLRColor[3];
-//
-//	_Colors[2].x = vTRColor[0];
-//	_Colors[2].y = vTRColor[1];
-//	_Colors[2].z = vTRColor[2];
-//	_Colors[2].w = vTRColor[3];
-//	_Colors[4] = _Colors[2];
-//
-//	_Colors[5].x = vTLColor[0];
-//	_Colors[5].y = vTLColor[1];
-//	_Colors[5].z = vTLColor[2];
-//	_Colors[5].w = vTLColor[3];
-//
-//	glBindBuffer(GL_ARRAY_BUFFER, _uiBuffer);
-//	glBufferSubData(GL_ARRAY_BUFFER, sizeof(_Points), sizeof(_Colors), _Colors);
-//}
-
 
 void CFlighter::draw(int type)
 {
@@ -310,6 +319,7 @@ void CFlighter::draw(int type)
 	if (type == 3) glDrawArrays(GL_POLYGON, 0, CIRCLE_NUM);	
 	else if (type == 4) glDrawArrays(GL_POLYGON, 0, FIVESTART_NUM);
 	else if(type ==5 ) glDrawArrays(GL_POLYGON, 0, MISSILE_NUM);
+	else if  (type ==6) glDrawArrays(GL_POLYGON, 0, UPGRADE_ONE);
 	else glDrawArrays(GL_TRIANGLES, 0, QUAD_NUM);
 }
 

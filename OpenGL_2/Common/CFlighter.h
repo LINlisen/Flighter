@@ -12,6 +12,7 @@ typedef Angel::vec4  point4;
 #define RADIUS 0.4f
 #define PI 3.1415926f
 #define MISSILE_NUM 500
+#define UPGRADE_ONE 6
 class CFlighter
 {
 private:
@@ -26,6 +27,9 @@ private:
 	//for MISSILE_NUM
 	vec4 _MPoints[CIRCLE_NUM];
 	vec4 _MColors[CIRCLE_NUM];
+	//for fighter upgrade one
+	vec4 _UOPoints[UPGRADE_ONE];
+	vec4 _UOColors[UPGRADE_ONE];
 	// VAO
 	GLuint _uiVao;
 	// VBO
