@@ -57,6 +57,7 @@ Enemy* g_Enemy[10];
 int g_EnemyType[10];
 int _iGenCount;
 int _iInverse[10] = { 1 };
+int _iDieCount[10];
 float g_fEnemy[10][3];
 float g_fEnemyDir[10][3];
 float g_fEnemyCount[10];
@@ -187,10 +188,21 @@ void onFrameMove(float delta)
 		_iGenCount++;
 		EnemyTime -= 2.0f;
 	}
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < _iGenCount; i++) {
 		if (g_Enemy[i] == nullptr) break;
 		if (_bEnemyGen[i] && _bEnemyDel[i] == false) {
 			EnemyMove(1,i,delta);
+			for (int j = 0; j < _iOut; j++) {
+				bool check = g_Enemy[i]->CheckCollider(g_Missile[j]->getPos().x, g_Missile[j]->getPos().y, 1.0f);
+				if (check) {
+					_iDieCount[i]++;
+				}
+				if (_iDieCount[i] == 2) {
+					_bEnemyDel[i] = true;
+					delete g_Enemy[i];
+					_iDieCount[i] = 0;
+				}
+			}
 		}
 	}
 	
