@@ -17,9 +17,22 @@ class Enemy : public CShape
 private:
 
 public:
+	Enemy* g_Attack[20];
+	float g_fAttack[20][3];
+	float g_fAttackDir[20];
+	float g_AttackInitPos[20][3];
 
+	int _iFree = 20;
+	int _iOut = 0;
+	int _iNext = 0;
+	bool _bEnemyDel;
+	float _fAttackTime = 0;
+	float _fAttackSpeed = 5;
+	float _fAttackDur = 0.5f;
 	Enemy(int type);
 
+
+	void Attack(float delta);
 
 	void draw();
 	void drawW();

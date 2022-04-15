@@ -65,6 +65,9 @@ float EnemyTime = 0.0f;
 bool _bEnemyGen[10] = { false };
 bool _bEnemyDel[10] = { false };
 
+//for 2-4
+
+
 //for 3-2
 CFlighter* g_UpgradeOne[2];
 float g_fUpgradeOne[2][3];
@@ -153,6 +156,12 @@ void GL_Display(void)
 			g_Enemy[i]->draw();
 		}
 	}
+	for (int i = 0; i < _iGenCount; i++) {
+		for (int j = 0; j < g_Enemy[i]->_iOut; j++) {
+			g_Enemy[i]->g_Attack[j]->draw();
+		}
+
+	}
 	g_FiveStar->draw(4);
 	glutSwapBuffers();	// ец┤л Frame Buffer
 }
@@ -192,6 +201,7 @@ void onFrameMove(float delta)
 		if (g_Enemy[i] == nullptr) break;
 		if (_bEnemyGen[i] && _bEnemyDel[i] == false) {
 			EnemyMove(1,i,delta);
+			g_Enemy[i]->Attack(delta);
 			for (int j = 0; j < _iOut; j++) {
 				bool check = g_Enemy[i]->CheckCollider(g_Missile[j]->getPos().x, g_Missile[j]->getPos().y, 1.0f);
 				if (check) {
