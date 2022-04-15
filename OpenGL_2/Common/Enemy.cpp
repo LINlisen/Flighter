@@ -33,19 +33,11 @@ Enemy::Enemy(int type)
 			}
 
 		}
-		CreateBufferObject(ENEMY_ONE);
-		break;
-	case 2:
-		_Points = new vec4[200];
-		for (int i = 0; i < 200; i++) {
-			_Points[i].x = 200 * cosf(M_PI * 2.0f * i / 200);
-			_Points[i].y = -200 * sinf(M_PI * 2.0f * i / 200);
-			_Points[i].z = 0.0f;
-			_Points[i].w = 1.0f;
-		}
-		CreateBufferObject(200);
 		break;
 	}
+	
+		
+
 	_Colors = new vec4[ENEMY_ONE];
 	_Colors[0] = vec4(1.0f, 1.0f, 1.0f, 1.0f);  // (r, g, b, a)
 	_Colors[1] = vec4(1.0f, 0.0f, 0.0f, 1.0f);
@@ -55,7 +47,7 @@ Enemy::Enemy(int type)
 	_Colors[5] = vec4(0.0f, 0.0f, 1.0f, 1.0f);
 
 	// Create and initialize a buffer object 
-	
+	CreateBufferObject(ENEMY_ONE);
 	_bUpdateProj = false;
 }
 
@@ -95,43 +87,43 @@ void Enemy::drawW()
 mat4 _mxModelView(1.0f);
 mat4 _mxIdentity(1.0f);
 mat4 _mxProjection;
-void Enemy::Attack(float delta) {
-	mat4 mxT;
-	vec4 vColor = vec4(1, 0, 0, 1);
-	_fAttackTime += delta;
-	if (_fAttackTime > _fAttackDur) {
-		g_Attack[_iOut] = new Enemy(2);
-		vColor = vec4(1, 0, 0, 1);
-		g_Attack[_iOut]->setColor(vColor);
-		g_Attack[_iOut]->setShader(_mxModelView, _mxProjection);
-		mxT = Translate(g_AttackInitPos[_iOut][0], g_AttackInitPos[_iOut][1], g_AttackInitPos[_iOut][2]);
-		g_Attack[_iOut]->setTRSMatrix(mxT);
-		_iOut++;
-		_iFree--;
-		_fAttackTime -= _fAttackDur;
-
-	}
-	for (int i = 0; i < 20 - _iFree; i++) {
-		g_fAttackDir[i] += delta;
-		mxT = Translate(g_AttackInitPos[i][0], g_AttackInitPos[i][1] + g_fAttackDir[i] * _fAttackSpeed, 0);
-		g_Attack[i]->setTRSMatrix(mxT);
-		g_Attack[i]->setPos(vec3(g_AttackInitPos[i][0], g_AttackInitPos[i][1] + g_fAttackDir[i] * _fAttackSpeed, 0));
-		//out of windowns reset
-
-	}
-	for (int i = 0; i < _iOut; i++) {
-		if (g_Attack[i]->getPos().y > 13.8f) {
-			_iFree++;
-
-			for (int j = 0; j < _iOut - 1; j++) {
-				g_fAttackDir[j] = g_fAttackDir[j + 1];
-				g_AttackInitPos[j][0] = g_AttackInitPos[j + 1][0];
-				g_AttackInitPos[j][1] = g_AttackInitPos[j + 1][1];
-				g_Attack[j] = g_Attack[j + 1];
-				g_Attack[j]->setPos(vec3(g_AttackInitPos[i][0], g_AttackInitPos[i][1] + g_fAttackDir[i] * _fAttackSpeed, 0));
-			}
-			g_fAttackDir[_iOut - 1] = 0;
-			_iOut--;
-		}
-	}
-}
+//void Enemy::Attack(float delta) {
+//	mat4 mxT;
+//	vec4 vColor = vec4(1, 0, 0, 1);
+//	_fAttackTime += delta;
+//	if (_fAttackTime > _fAttackDur) {
+//		g_Attack[_iOut] = new CFlighter(3);
+//		vColor = vec4(1, 0, 0, 1);
+//		g_Attack[_iOut]->setColor(vColor,3);
+//		g_Attack[_iOut]->setShader(_mxModelView, _mxProjection,3);
+//		mxT = Translate(g_AttackInitPos[_iOut][0], g_AttackInitPos[_iOut][1], g_AttackInitPos[_iOut][2]);
+//		g_Attack[_iOut]->setTRSMatrix(mxT);
+//		_iOut++;
+//		_iFree--;
+//		_fAttackTime -= _fAttackDur;
+//
+//	}
+//	for (int i = 0; i < 20 - _iFree; i++) {
+//		g_fAttackDir[i] += delta;
+//		mxT = Translate(g_AttackInitPos[i][0], g_AttackInitPos[i][1] + g_fAttackDir[i] * _fAttackSpeed, 0);
+//		g_Attack[i]->setTRSMatrix(mxT);
+//		g_Attack[i]->setPos(vec3(g_AttackInitPos[i][0], g_AttackInitPos[i][1] + g_fAttackDir[i] * _fAttackSpeed, 0));
+//		//out of windowns reset
+//
+//	}
+//	for (int i = 0; i < _iOut; i++) {
+//		if (g_Attack[i]->getPos().y > 13.8f) {
+//			_iFree++;
+//
+//			for (int j = 0; j < _iOut - 1; j++) {
+//				g_fAttackDir[j] = g_fAttackDir[j + 1];
+//				g_AttackInitPos[j][0] = g_AttackInitPos[j + 1][0];
+//				g_AttackInitPos[j][1] = g_AttackInitPos[j + 1][1];
+//				g_Attack[j] = g_Attack[j + 1];
+//				g_Attack[j]->setPos(vec3(g_AttackInitPos[i][0], g_AttackInitPos[i][1] + g_fAttackDir[i] * _fAttackSpeed, 0));
+//			}
+//			g_fAttackDir[_iOut - 1] = 0;
+//			_iOut--;
+//		}
+//	}
+//}
