@@ -65,20 +65,6 @@ float EnemyTime = 0.0f;
 bool _bEnemyGen[10] = { false };
 bool _bEnemyDel[10] = { false };
 
-//for 2-4
-//CFlighter* g_Attack_1[20];
-//float g_fAttack_1[20][3];
-//float g_fAttackDir_1[20];
-//float g_AttackInitPos_1[20][3];
-//
-//int _iFree_1 = 20;
-//int _iOut = 0;
-//int _iNext = 0;
-//bool _bEnemyDel;
-//float _fAttackTime = 0;
-//float _fAttackSpeed = 5;
-//float _fAttackDur = 0.5f;
-
 //for 3-2
 CFlighter* g_UpgradeOne[2];
 float g_fUpgradeOne[2][3];
@@ -115,7 +101,7 @@ void EatChange_Generate(int);//3-2
 void EatChangeMove(int , float);//4-1
 void EnemyGen(int,int);
 void EnemyMove(int,int,float);
-void Attack(float,int);
+void Attack(float,int,Enemy*);
 void init(void)
 {
 	//  產生 projection 矩陣，此處為產生正投影矩陣
@@ -212,9 +198,14 @@ void onFrameMove(float delta)
 	}
 	for (int i = 0; i < _iGenCount; i++) {
 		if (g_Enemy[i] == nullptr) break;
+		srand(time(NULL));
+		/* 指定亂數範圍 */
+		float _fmin = 1.0f;
+		float _fmax = 5.0f;
+		float _fx = (_fmax - _fmin) * rand() / (RAND_MAX + 1.0) + _fmin;
 		if (_bEnemyGen[i] && _bEnemyDel[i] == false) {
+			g_Enemy[i]->_fAttackDur = _fx;
 			EnemyMove(1,i,delta);
-			//g_Enemy[i]->Attack(delta);
 			for (int j = 0; j < _iOut; j++) {
 				bool check = g_Enemy[i]->CheckCollider(g_Missile[j]->getPos().x, g_Missile[j]->getPos().y, 1.0f);
 				if (check) {
@@ -230,7 +221,7 @@ void onFrameMove(float delta)
 			//Attack(delta);
 		}
 		if (!g_Enemy[i]->_bAttackOut) {
-			Attack(delta,i);
+			Attack(delta,i, g_Enemy[i]);
 		}
 	}
 	
@@ -501,53 +492,50 @@ void EnemyMove(int type, int index,float delta) {
 	}
 }
 
-void Attack(float delta,int i) {
+void Attack(float delta,int i,Enemy* Enemy) {
 	mat4 mxT;
 	vec4 vColor = vec4(1, 0, 0, 1);
 	float px, py, pz = 0.0f;
-
-
-		g_Enemy[i]->_fAttackTime += delta;
-		//printf("%d:%f\n", i, g_Enemy[i]->_fAttackTime);
-		if (g_Enemy[i]->_fAttackTime > g_Enemy[i]->_fAttackDur && g_Enemy[i]->_bEnemyDel == false) {
-			g_Enemy[i]->g_Attack[g_Enemy[i]->_iOut] = new CFlighter(7);
-			vColor = vec4(1, 0, 0, 1);
-			g_Enemy[i]->g_Attack[g_Enemy[i]->_iOut]->setColor(vColor, 7);
-			g_Enemy[i]->g_Attack[g_Enemy[i]->_iOut]->setShader(g_mxModelView, g_mxProjection, 7);
-			g_Enemy[i]->g_AttackInitPos[g_Enemy[i]->_iOut][0] = g_Enemy[i]->getPos().x;
-			g_Enemy[i]->g_AttackInitPos[g_Enemy[i]->_iOut][1] = g_Enemy[i]->getPos().y;
-			mxT = Translate(g_Enemy[i]->g_AttackInitPos[g_Enemy[i]->_iOut][0], g_Enemy[i]->g_AttackInitPos[g_Enemy[i]->_iOut][1], pz);
-			g_Enemy[i]->g_Attack[g_Enemy[i]->_iOut]->setTRSMatrix(mxT);
-			g_Enemy[i]->_iOut++;
-			g_Enemy[i]->_iFree--;
-			g_Enemy[i]->_fAttackTime = 0;
-		}
-		for (int j = 0; j < 10 - g_Enemy[i]->_iFree; j++) {
-			g_Enemy[i]->g_fAttackDir[j] -= delta;
-			mxT = Translate(g_Enemy[i]->g_AttackInitPos[j][0], g_Enemy[i]->g_AttackInitPos[j][1] + g_Enemy[i]->g_fAttackDir[j] * g_Enemy[i]->_fAttackSpeed, 0);
-			g_Enemy[i]->g_Attack[j]->setTRSMatrix(mxT);
-			g_Enemy[i]->g_Attack[j]->setPos(vec3(g_Enemy[i]->g_AttackInitPos[j][0], g_Enemy[i]->g_AttackInitPos[j][1] + g_Enemy[i]->g_fAttackDir[j] * g_Enemy[i]->_fAttackSpeed, 0));
-			//out of windowns reset
-		}
-		for (int k = 0; k < g_Enemy[i]->_iOut; k++) {
-			//printf("%d,%d:(%f)\n", i, k, g_Enemy[i]->g_Attack[k]->getPos().y);
-			if (g_Enemy[i]->g_Attack[k]->getPos().y < -13.8f) {
-				g_Enemy[i]->_iFree++;
-				for (int l = 0; l < g_Enemy[i]->_iOut - 1; l++) {
-					g_Enemy[i]->g_fAttackDir[l] = g_Enemy[i]->g_fAttackDir[l + 1];
-					g_Enemy[i]->g_AttackInitPos[l][0] = g_Enemy[i]->g_AttackInitPos[l + 1][0];
-					g_Enemy[i]->g_AttackInitPos[l][1] = g_Enemy[i]->g_AttackInitPos[l + 1][1];
-					g_Enemy[i]->g_Attack[l] = g_Enemy[i]->g_Attack[l + 1];
-					g_Enemy[i]->g_Attack[l]->setPos(vec3(g_Enemy[i]->g_AttackInitPos[l][0], g_Enemy[i]->g_AttackInitPos[l][1] + g_Enemy[i]->g_fAttackDir[l] * g_Enemy[i]->_fAttackSpeed, 0));
-				}
-				g_Enemy[i]->g_fAttackDir[g_Enemy[i]->_iOut - 1] = 0;
-				g_Enemy[i]->_iOut--;
+	Enemy->_fAttackTime += delta;
+	//printf("%d:%f\n", i, g_Enemy[i]->_fAttackTime);
+	if (Enemy->_fAttackTime > Enemy->_fAttackDur && Enemy->_bEnemyDel == false) {
+		Enemy->g_Attack[Enemy->_iOut] = new CFlighter(7);
+		vColor = vec4(1, 0, 0, 1);
+		Enemy->g_Attack[Enemy->_iOut]->setColor(vColor, 7);
+		Enemy->g_Attack[Enemy->_iOut]->setShader(g_mxModelView, g_mxProjection, 7);
+		Enemy->g_AttackInitPos[Enemy->_iOut][0] = Enemy->getPos().x;
+		Enemy->g_AttackInitPos[Enemy->_iOut][1] = Enemy->getPos().y;
+		mxT = Translate(Enemy->g_AttackInitPos[Enemy->_iOut][0], Enemy->g_AttackInitPos[Enemy->_iOut][1], pz);
+		Enemy->g_Attack[Enemy->_iOut]->setTRSMatrix(mxT);
+		Enemy->_iOut++;
+		Enemy->_iFree--;
+		Enemy->_fAttackTime = 0;
+	}
+	for (int j = 0; j < 10 - Enemy->_iFree; j++) {
+		Enemy->g_fAttackDir[j] -= delta;
+		mxT = Translate(Enemy->g_AttackInitPos[j][0], Enemy->g_AttackInitPos[j][1] + Enemy->g_fAttackDir[j] * Enemy->_fAttackSpeed, 0);
+		Enemy->g_Attack[j]->setTRSMatrix(mxT);
+		Enemy->g_Attack[j]->setPos(vec3(Enemy->g_AttackInitPos[j][0], Enemy->g_AttackInitPos[j][1] + Enemy->g_fAttackDir[j] * Enemy->_fAttackSpeed, 0));
+		//out of windowns reset
+	}
+	for (int k = 0; k < Enemy->_iOut; k++) {
+		//printf("%d,%d:(%f)\n", i, k, g_Enemy[i]->g_Attack[k]->getPos().y);
+		if (Enemy->g_Attack[k]->getPos().y < -13.8f) {
+			Enemy->_iFree++;
+			for (int l = 0; l < Enemy->_iOut - 1; l++) {
+				Enemy->g_fAttackDir[l] = Enemy->g_fAttackDir[l + 1];
+				Enemy->g_AttackInitPos[l][0] = Enemy->g_AttackInitPos[l + 1][0];
+				Enemy->g_AttackInitPos[l][1] = Enemy->g_AttackInitPos[l + 1][1];
+				Enemy->g_Attack[l] = Enemy->g_Attack[l + 1];
+				Enemy->g_Attack[l]->setPos(vec3(Enemy->g_AttackInitPos[l][0], Enemy->g_AttackInitPos[l][1] + Enemy->g_fAttackDir[l] * Enemy->_fAttackSpeed, 0));
 			}
-			if (g_Enemy[i]->_iOut == 0) {
-				g_Enemy[i]->_bAttackOut = true;
-			}
+			Enemy->g_fAttackDir[Enemy->_iOut - 1] = 0;
+			Enemy->_iOut--;
 		}
-	
+		if (Enemy->_iOut == 0) {
+			Enemy->_bAttackOut = true;
+		}
+	}
 }
 
 //----------------------------------------------------------------------------------------------------------------------------

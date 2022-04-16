@@ -30,8 +30,8 @@ public:
 	bool _bEnemyDel = false;
 	bool _bAttackOut = false;
 	float _fAttackTime = 0;
-	float _fAttackSpeed = 2;
-	float _fAttackDur = 5.0f;
+	float _fAttackSpeed = 5;
+	float _fAttackDur = 2.0f;
 
 	void draw();
 	void drawW();
