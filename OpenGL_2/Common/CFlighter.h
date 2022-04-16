@@ -30,6 +30,9 @@ private:
 	//for fighter upgrade one
 	vec4 _UOPoints[UPGRADE_ONE];
 	vec4 _UOColors[UPGRADE_ONE];
+	//for enemy Attack
+	vec4 _APoints[200];
+	vec4 _AColors[200];
 	// VAO
 	GLuint _uiVao;
 	// VBO

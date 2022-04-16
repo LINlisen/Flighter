@@ -115,7 +115,7 @@ void EatChange_Generate(int);//3-2
 void EatChangeMove(int , float);//4-1
 void EnemyGen(int,int);
 void EnemyMove(int,int,float);
-void Attack(float);
+void Attack(float,int);
 void init(void)
 {
 	//  產生 projection 矩陣，此處為產生正投影矩陣
@@ -166,16 +166,15 @@ void GL_Display(void)
 	for (int i = 0; i < _iGenCount; i++) {
 		if (_bEnemyGen[i] && !(_bEnemyDel[i])) {
 			g_Enemy[i]->draw();
-			for (int j = 0; j < g_Enemy[i]->_iOut; j++) {
-				g_Enemy[i]->g_Attack[j]->draw(3);
+		}
+		for (int j = 0; j < g_Enemy[i]->_iOut; j++) {
+			if (!g_Enemy[i]->_bAttackOut) {
+				g_Enemy[i]->g_Attack[j]->draw(7);
+				//printf("%d:%d draw\n", i, j);
 			}
 		}
 	}
-	//for (int i = 0; i < _iGenCount; i++) {
-	//	for (int j = 0; j < g_Enemy[i]->_iOut; j++) {
-	//		g_Enemy[i]->g_Attack[j]->draw();
-	//	}
-	//}
+
 	g_FiveStar->draw(4);
 	glutSwapBuffers();	// 交換 Frame Buffer
 }
@@ -223,11 +222,15 @@ void onFrameMove(float delta)
 				}
 				if (_iDieCount[i] == 2) {
 					_bEnemyDel[i] = true;
-					delete g_Enemy[i];
+					g_Enemy[i]->_bEnemyDel = true;
+					if(g_Enemy[i]->_bAttackOut) delete g_Enemy[i];
 					_iDieCount[i] = 0;
 				}
 			}
-			Attack(delta);
+			//Attack(delta);
+		}
+		if (!g_Enemy[i]->_bAttackOut) {
+			Attack(delta,i);
 		}
 	}
 	
@@ -498,19 +501,19 @@ void EnemyMove(int type, int index,float delta) {
 	}
 }
 
-void Attack(float delta) {
+void Attack(float delta,int i) {
 	mat4 mxT;
 	vec4 vColor = vec4(1, 0, 0, 1);
 	float px, py, pz = 0.0f;
 
-	for (int i = 0; i < _iGenCount; i++) {
+
 		g_Enemy[i]->_fAttackTime += delta;
-		printf("%d:%f\n", i, g_Enemy[i]->_fAttackTime);
-		if (g_Enemy[i]->_fAttackTime > g_Enemy[i]->_fAttackDur) {
-			g_Enemy[i]->g_Attack[g_Enemy[i]->_iOut] = new CFlighter(3);
+		//printf("%d:%f\n", i, g_Enemy[i]->_fAttackTime);
+		if (g_Enemy[i]->_fAttackTime > g_Enemy[i]->_fAttackDur && g_Enemy[i]->_bEnemyDel == false) {
+			g_Enemy[i]->g_Attack[g_Enemy[i]->_iOut] = new CFlighter(7);
 			vColor = vec4(1, 0, 0, 1);
-			g_Enemy[i]->g_Attack[g_Enemy[i]->_iOut]->setColor(vColor, 3);
-			g_Enemy[i]->g_Attack[g_Enemy[i]->_iOut]->setShader(g_mxModelView, g_mxProjection, 3);
+			g_Enemy[i]->g_Attack[g_Enemy[i]->_iOut]->setColor(vColor, 7);
+			g_Enemy[i]->g_Attack[g_Enemy[i]->_iOut]->setShader(g_mxModelView, g_mxProjection, 7);
 			g_Enemy[i]->g_AttackInitPos[g_Enemy[i]->_iOut][0] = g_Enemy[i]->getPos().x;
 			g_Enemy[i]->g_AttackInitPos[g_Enemy[i]->_iOut][1] = g_Enemy[i]->getPos().y;
 			mxT = Translate(g_Enemy[i]->g_AttackInitPos[g_Enemy[i]->_iOut][0], g_Enemy[i]->g_AttackInitPos[g_Enemy[i]->_iOut][1], pz);
@@ -521,8 +524,6 @@ void Attack(float delta) {
 		}
 		for (int j = 0; j < 10 - g_Enemy[i]->_iFree; j++) {
 			g_Enemy[i]->g_fAttackDir[j] -= delta;
-			px = g_Enemy[i]->getPos().x;
-			py = g_Enemy[i]->getPos().y;
 			mxT = Translate(g_Enemy[i]->g_AttackInitPos[j][0], g_Enemy[i]->g_AttackInitPos[j][1] + g_Enemy[i]->g_fAttackDir[j] * g_Enemy[i]->_fAttackSpeed, 0);
 			g_Enemy[i]->g_Attack[j]->setTRSMatrix(mxT);
 			g_Enemy[i]->g_Attack[j]->setPos(vec3(g_Enemy[i]->g_AttackInitPos[j][0], g_Enemy[i]->g_AttackInitPos[j][1] + g_Enemy[i]->g_fAttackDir[j] * g_Enemy[i]->_fAttackSpeed, 0));
@@ -542,8 +543,11 @@ void Attack(float delta) {
 				g_Enemy[i]->g_fAttackDir[g_Enemy[i]->_iOut - 1] = 0;
 				g_Enemy[i]->_iOut--;
 			}
+			if (g_Enemy[i]->_iOut == 0) {
+				g_Enemy[i]->_bAttackOut = true;
+			}
 		}
-	}
+	
 }
 
 //----------------------------------------------------------------------------------------------------------------------------

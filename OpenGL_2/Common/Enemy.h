@@ -27,10 +27,11 @@ public:
 	int _iFree = 10;
 	int _iOut = 0;
 	int _iNext = 0;
-	bool _bEnemyDel;
+	bool _bEnemyDel = false;
+	bool _bAttackOut = false;
 	float _fAttackTime = 0;
 	float _fAttackSpeed = 2;
-	float _fAttackDur = 10.0f;
+	float _fAttackDur = 5.0f;
 
 	void draw();
 	void drawW();
