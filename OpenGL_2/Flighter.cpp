@@ -224,6 +224,9 @@ void onFrameMove(float delta)
 			Attack(delta,i, g_Enemy[i]);
 		}
 	}
+	if (_fShootDur >= 3.5f) {
+		_fShootDur = 0.5f;
+	}
 	
 	GL_Display();
 }
@@ -511,30 +514,41 @@ void Attack(float delta,int i,Enemy* Enemy) {
 		Enemy->_iFree--;
 		Enemy->_fAttackTime = 0;
 	}
-	for (int j = 0; j < 10 - Enemy->_iFree; j++) {
-		Enemy->g_fAttackDir[j] -= delta;
-		mxT = Translate(Enemy->g_AttackInitPos[j][0], Enemy->g_AttackInitPos[j][1] + Enemy->g_fAttackDir[j] * Enemy->_fAttackSpeed, 0);
-		Enemy->g_Attack[j]->setTRSMatrix(mxT);
-		Enemy->g_Attack[j]->setPos(vec3(Enemy->g_AttackInitPos[j][0], Enemy->g_AttackInitPos[j][1] + Enemy->g_fAttackDir[j] * Enemy->_fAttackSpeed, 0));
-		//out of windowns reset
+	for (int j = 0; j < 20 - Enemy->_iFree; j++) {
+		if (Enemy->g_Attack[j] != nullptr) {
+			Enemy->g_fAttackDir[j] -= delta;
+			mxT = Translate(Enemy->g_AttackInitPos[j][0], Enemy->g_AttackInitPos[j][1] + Enemy->g_fAttackDir[j] * Enemy->_fAttackSpeed, 0);
+			Enemy->g_Attack[j]->setTRSMatrix(mxT);
+			Enemy->g_Attack[j]->setPos(vec3(Enemy->g_AttackInitPos[j][0], Enemy->g_AttackInitPos[j][1] + Enemy->g_fAttackDir[j] * Enemy->_fAttackSpeed, 0));
+			//out of windowns reset
+			bool _bAttack = g_Player[0]->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y, 1.5);
+			if (_bAttack) {
+				printf("Attack");
+				Enemy->_bAttackSus[j] = true;
+				_fShootDur += 1.0f;
+			}
+		}
 	}
 	for (int k = 0; k < Enemy->_iOut; k++) {
 		//printf("%d,%d:(%f)\n", i, k, g_Enemy[i]->g_Attack[k]->getPos().y);
-		if (Enemy->g_Attack[k]->getPos().y < -13.8f) {
-			Enemy->_iFree++;
-			for (int l = 0; l < Enemy->_iOut - 1; l++) {
-				Enemy->g_fAttackDir[l] = Enemy->g_fAttackDir[l + 1];
-				Enemy->g_AttackInitPos[l][0] = Enemy->g_AttackInitPos[l + 1][0];
-				Enemy->g_AttackInitPos[l][1] = Enemy->g_AttackInitPos[l + 1][1];
-				Enemy->g_Attack[l] = Enemy->g_Attack[l + 1];
-				Enemy->g_Attack[l]->setPos(vec3(Enemy->g_AttackInitPos[l][0], Enemy->g_AttackInitPos[l][1] + Enemy->g_fAttackDir[l] * Enemy->_fAttackSpeed, 0));
+		if (Enemy->g_Attack[k] != nullptr) {
+			if (Enemy->g_Attack[k]->getPos().y < -13.8f || Enemy->_bAttackSus[k]) {
+				Enemy->_iFree++;
+				for (int l = 0; l < Enemy->_iOut - 1; l++) {
+					Enemy->g_fAttackDir[l] = Enemy->g_fAttackDir[l + 1];
+					Enemy->g_AttackInitPos[l][0] = Enemy->g_AttackInitPos[l + 1][0];
+					Enemy->g_AttackInitPos[l][1] = Enemy->g_AttackInitPos[l + 1][1];
+					Enemy->g_Attack[l] = Enemy->g_Attack[l + 1];
+					Enemy->g_Attack[l]->setPos(vec3(Enemy->g_AttackInitPos[l][0], Enemy->g_AttackInitPos[l][1] + Enemy->g_fAttackDir[l] * Enemy->_fAttackSpeed, 0));
+				}
+				Enemy->g_fAttackDir[Enemy->_iOut - 1] = 0;
+				Enemy->_iOut--;
 			}
-			Enemy->g_fAttackDir[Enemy->_iOut - 1] = 0;
-			Enemy->_iOut--;
+			if (Enemy->_iOut == 0) {
+				Enemy->_bAttackOut = true;
+			}
 		}
-		if (Enemy->_iOut == 0) {
-			Enemy->_bAttackOut = true;
-		}
+		
 	}
 }
 
