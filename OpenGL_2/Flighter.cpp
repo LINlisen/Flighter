@@ -122,8 +122,9 @@ void EatChange_Generate(int);//3-2
 void EatChangeMove(int , float);//4-1
 void EnemyGen(int,int);
 void EnemyMove(int,int,float);
-void Attack(float,int,Enemy*);
+void Attack(float,int,Enemy*,int);
 float getRandomf(float _max, float _min); //get romdon float
+int getRandomi(int _max, int _min);
 void init(void)
 {
 	//  產生 projection 矩陣，此處為產生正投影矩陣
@@ -185,7 +186,13 @@ void GL_Display(void)
 		if (_bEnemyGen_S[i] && !(_bEnemyDel_S[i])) {
 			g_Enemy_S[i]->draw();
 			//printf("%d:(%f,%f)\n", i, g_Enemy_S[i]->getPos().x, g_Enemy_S[i]->getPos().y);
-			
+		}
+		for (int j = 0; j < g_Enemy_S[i]->_iOut; j++) {
+			if (!g_Enemy_S[i]->_bAttackOut) {
+				if (g_Enemy_S[i] != nullptr && g_Enemy_S[i]->g_Attack[j] != nullptr)
+					g_Enemy_S[i]->g_Attack[j]->draw(7);
+				//printf("%d:%d draw\n", i, j);
+			}
 		}
 	}
 	g_FiveStar->draw(4);
@@ -244,7 +251,7 @@ void onFrameMove(float delta)
 			//Attack(delta);
 		}
 		if (!g_Enemy[i]->_bAttackOut) {
-			Attack(delta,i, g_Enemy[i]);
+			Attack(delta,i, g_Enemy[i],1);
 		}
 	}
 	//Second Enemy Generate
@@ -274,7 +281,7 @@ void onFrameMove(float delta)
 				//Attack(delta);
 			}
 			if (!g_Enemy_S[i]->_bAttackOut) {
-				Attack(delta, i, g_Enemy_S[i]);
+				Attack(delta, i, g_Enemy_S[i],2);
 			}
 		}
 		
@@ -456,7 +463,7 @@ void CloudMove(float delta) {
 		g_fCloud[i][1] -= delta * g_fSpeedCloud[i];
 		if (g_fCloud[i][1] < -13.0f) {
 			g_fCloud[i][0] = getRandomf(13.0f,-13.0f); g_fCloud[i][1] = 13.0f;
-			g_fSpeedCloud[i] = rand() % (_imax - _imin + 1) + _imin;
+			g_fSpeedCloud[i] = getRandomi(10,1);
 		}
 		mxT = Translate(g_fCloud[i][0], g_fCloud[i][1], g_fCloud[i][2]);
 		g_Cloud[i]->setTRSMatrix(mxT);
@@ -564,7 +571,7 @@ void EnemyMove(int type, int index,float delta) {
 	}
 }
 
-void Attack(float delta,int i,Enemy* Enemy) {
+void Attack(float delta,int i,Enemy* Enemy,int type) {
 	mat4 mxT;
 	vec4 vColor = vec4(1, 0, 0, 1);
 	float px, py, pz = 0.0f;
@@ -572,7 +579,8 @@ void Attack(float delta,int i,Enemy* Enemy) {
 	//printf("%d:%f\n", i, g_Enemy[i]->_fAttackTime);
 	if (Enemy->_fAttackTime > Enemy->_fAttackDur && Enemy->_bEnemyDel == false) {
 		Enemy->g_Attack[Enemy->_iOut] = new CFlighter(7);
-		vColor = vec4(1, 0, 0, 1);
+		if(type == 1) vColor = vec4(1, 0, 0, 1);
+		else if(type ==2) vColor = vec4(0, 0, 1, 1);
 		Enemy->g_Attack[Enemy->_iOut]->setColor(vColor, 7);
 		Enemy->g_Attack[Enemy->_iOut]->setShader(g_mxModelView, g_mxProjection, 7);
 		Enemy->g_AttackInitPos[Enemy->_iOut][0] = Enemy->getPos().x;
@@ -583,26 +591,59 @@ void Attack(float delta,int i,Enemy* Enemy) {
 		Enemy->_iFree--;
 		Enemy->_fAttackTime = 0;
 	}
-	for (int j = 0; j < 20 - Enemy->_iFree; j++) {
+	for (int j = 0; j < 10 - Enemy->_iFree; j++) {
+		bool _bAttack = false;
 		if (Enemy->g_Attack[j] != nullptr) {
 			Enemy->g_fAttackDir[j] -= delta;
-			mxT = Translate(Enemy->g_AttackInitPos[j][0], Enemy->g_AttackInitPos[j][1] + Enemy->g_fAttackDir[j] * Enemy->_fAttackSpeed, 0);
-			Enemy->g_Attack[j]->setPos(vec3(Enemy->g_AttackInitPos[j][0], Enemy->g_AttackInitPos[j][1] + Enemy->g_fAttackDir[j] * Enemy->_fAttackSpeed, 0));
-			Enemy->g_Attack[j]->setTRSMatrix(mxT);
-			//out of windowns reset
-			bool _bAttack = g_Player[0]->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y, 1.5);
-			//protecy player
-			// 
-			//bool _bDefend = g_FiveStar->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y, 1);
-			//printf("(%f,%f),(%f,%f)\n", g_FiveStar->getPos().x, g_FiveStar->getPos().y, g_Player[0]->getPos().x, g_Player[0]->getPos().y);
-			/*if (_bDefend) {
-				Enemy->_bAttackSus[j] = true;
-			}*/
-			if (_bAttack) {
-				printf("Attack");
-				Enemy->_bAttackSus[j] = true;
-				_fShootDur += 1.0f;
+			switch (type)
+			{
+			case 1:
+				mxT = Translate(Enemy->g_AttackInitPos[j][0], Enemy->g_AttackInitPos[j][1] + Enemy->g_fAttackDir[j] * Enemy->_fAttackSpeed, 0);
+				Enemy->g_Attack[j]->setPos(vec3(Enemy->g_AttackInitPos[j][0], Enemy->g_AttackInitPos[j][1] + Enemy->g_fAttackDir[j] * Enemy->_fAttackSpeed, 0));
+				Enemy->g_Attack[j]->setTRSMatrix(mxT);
+				//out of windowns reset
+				_bAttack = g_Player[0]->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y, 1.5);
+				//protecy player
+				// 
+				//bool _bDefend = g_FiveStar->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y, 1);
+				//printf("(%f,%f),(%f,%f)\n", g_FiveStar->getPos().x, g_FiveStar->getPos().y, g_Player[0]->getPos().x, g_Player[0]->getPos().y);
+				/*if (_bDefend) {
+					Enemy->_bAttackSus[j] = true;
+				}*/
+				if (_bAttack) {
+					printf("Attack");
+					Enemy->_bAttackSus[j] = true;
+					_fShootDur += 1.0f;
+				}
+				break;
+			case 2:
+				if (Enemy->g_AttackInitPos[j][0] < 0.0f) {
+					mxT = Translate(Enemy->g_AttackInitPos[j][0] - (Enemy->g_fAttackDir[j] * Enemy->_fAttackSpeed), Enemy->g_AttackInitPos[j][1], 0);
+					Enemy->g_Attack[j]->setPos(vec3(Enemy->g_AttackInitPos[j][0] - (Enemy->g_fAttackDir[j] * Enemy->_fAttackSpeed), Enemy->g_AttackInitPos[j][1], 0));
+				}
+				else {
+					mxT = Translate(Enemy->g_AttackInitPos[j][0] + (Enemy->g_fAttackDir[j] * Enemy->_fAttackSpeed), Enemy->g_AttackInitPos[j][1], 0);
+					Enemy->g_Attack[j]->setPos(vec3(Enemy->g_AttackInitPos[j][0] + (Enemy->g_fAttackDir[j] * Enemy->_fAttackSpeed), Enemy->g_AttackInitPos[j][1], 0));
+				}
+				Enemy->g_Attack[j]->setTRSMatrix(mxT);
+				//out of windowns reset
+				_bAttack = g_Player[0]->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y, 1.5);
+				//protecy player
+				// 
+				//bool _bDefend = g_FiveStar->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y, 1);
+				//printf("(%f,%f),(%f,%f)\n", g_FiveStar->getPos().x, g_FiveStar->getPos().y, g_Player[0]->getPos().x, g_Player[0]->getPos().y);
+				/*if (_bDefend) {
+					Enemy->_bAttackSus[j] = true;
+				}*/
+				if (_bAttack) {
+					printf("Attack");
+					Enemy->_bAttackSus[j] = true;
+					_fShootDur += 1.0f;
+				}
+				break;
 			}
+			
+			
 		}
 	}
 	for (int k = 0; k < Enemy->_iOut; k++) {
@@ -631,6 +672,13 @@ float getRandomf(float _max, float _min) {
 	std::default_random_engine eng(rd());
 	std::uniform_real_distribution<float> distr(_min, _max);
 	float fx = distr(eng);
+	return fx;
+}
+int getRandomi(int _max, int _min) {
+	std::random_device rd;
+	std::default_random_engine eng(rd());
+	std::uniform_real_distribution<> distr(_min, _max);
+	int fx = distr(eng);
 	return fx;
 }
 //----------------------------------------------------------------------------------------------------------------------------

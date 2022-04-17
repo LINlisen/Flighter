@@ -380,7 +380,7 @@ void CFlighter::setPos(vec3 Pos) {
 }
 
 vec3 CFlighter::getPos() {
-	if (_mxPos == NULL) return vec3(0,-13.0f,0);
+	if (_mxPos == nullptr) return vec3(0,-13.0f,0);
 	else return _mxPos;
 		
 }
