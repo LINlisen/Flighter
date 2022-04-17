@@ -13,6 +13,8 @@ private:
 public:
 	vec4* _Points; // 儲存頂點的指標變數
 	vec4* _Colors; // 儲存頂點顏色的指標變數
+	vec4* _SPoints;
+	vec4* _SColors;
 
 	int  _nVtx; // 這個物件有幾個 vertex
 	char* _pVXshader, * _pFSshader; //vertex 與 pixel shader 的字元指標

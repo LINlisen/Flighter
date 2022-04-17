@@ -380,7 +380,9 @@ void CFlighter::setPos(vec3 Pos) {
 }
 
 vec3 CFlighter::getPos() {
-	return _mxPos;
+	if (_mxPos == NULL) return vec3(0,-13.0f,0);
+	else return _mxPos;
+		
 }
 
 bool  CFlighter::CheckCollider(float x, float y, float r) {

@@ -11,6 +11,8 @@ typedef Angel::vec4  point4;
 #define SARTRADIUS 1.2
 #define CLOUD_NUM 500  // 2 faces, 2 triangles/face 
 #define ENEMY_ONE 205
+#define ENEMY_TWO 210
+#define ENEMY_TWO_RADIUS 1.6
 #define VP_HALFWIDTH  12.0f
 
 class Enemy : public CShape

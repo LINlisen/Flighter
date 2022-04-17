@@ -6,6 +6,16 @@
 #include "Common/CFlighter.h"
 #include "Common/CBackGround.h"
 #include "Common/Enemy.h"
+#include <iostream>
+#include <random>
+#include <iomanip>
+
+using std::cout;
+using std::endl;
+using std::setprecision;
+
+constexpr int FLOAT_MIN = 10;
+constexpr int FLOAT_MAX = 100;
 
 #define SPACE_KEY 32
 #define SCREEN_SIZE 800
@@ -52,7 +62,7 @@ int g_CloudType[4];
 int g_fSpeedCloud[4];
 
 //for 2-1 2-2
-
+//First Enemy
 Enemy* g_Enemy[10];
 int g_EnemyType[10];
 int _iGenCount;
@@ -64,7 +74,18 @@ float g_fEnemyCount[10];
 float EnemyTime = 0.0f;
 bool _bEnemyGen[10] = { false };
 bool _bEnemyDel[10] = { false };
-
+//Second Enemy
+Enemy* g_Enemy_S[10];
+int g_EnemyType_S[10];
+int _iGenCount_S;
+int _iInverse_S[10] = { 1 };
+int _iDieCount_S[10];
+float g_fEnemy_S[10][3];
+float g_fEnemyDir_S[10][3];
+float g_fEnemyCount_S[10];
+float EnemyTime_S = 0.0f;
+bool _bEnemyGen_S[10] = { false };
+bool _bEnemyDel_S[10] = { false };
 //for 3-2
 CFlighter* g_UpgradeOne[2];
 float g_fUpgradeOne[2][3];
@@ -102,11 +123,11 @@ void EatChangeMove(int , float);//4-1
 void EnemyGen(int,int);
 void EnemyMove(int,int,float);
 void Attack(float,int,Enemy*);
+float getRandomf(float _max, float _min); //get romdon float
 void init(void)
 {
 	//  產生 projection 矩陣，此處為產生正投影矩陣
 	g_mxProjection = Ortho(-VP_HALFWIDTH, VP_HALFWIDTH, -VP_HALFWIDTH, VP_HALFWIDTH, -1.0f, 1.0f);
-
 	// 必須在 glewInit(); 執行完後,在執行物件實體的取得
 	CreateQuadRelationship();
 	glClearColor(0.2, 0.75f, 0.85f, 1.0); // black background
@@ -146,7 +167,6 @@ void GL_Display(void)
 			case 2:
 				break;
 			}
-			
 		}
 	}
 	for (int i = 0; i < _iGenCount; i++) {
@@ -155,12 +175,19 @@ void GL_Display(void)
 		}
 		for (int j = 0; j < g_Enemy[i]->_iOut; j++) {
 			if (!g_Enemy[i]->_bAttackOut) {
-				g_Enemy[i]->g_Attack[j]->draw(7);
+				if(g_Enemy[i]!=nullptr)
+					g_Enemy[i]->g_Attack[j]->draw(7);
 				//printf("%d:%d draw\n", i, j);
 			}
 		}
 	}
-
+	for (int i = 0; i < _iGenCount_S; i++) {
+		if (_bEnemyGen_S[i] && !(_bEnemyDel_S[i])) {
+			g_Enemy_S[i]->draw();
+			//printf("%d:(%f,%f)\n", i, g_Enemy_S[i]->getPos().x, g_Enemy_S[i]->getPos().y);
+			
+		}
+	}
 	g_FiveStar->draw(4);
 	glutSwapBuffers();	// 交換 Frame Buffer
 }
@@ -173,6 +200,7 @@ void onFrameMove(float delta)
 	//for 3-2 eat change
 	CountTime += delta;
 	EnemyTime += delta;
+	EnemyTime_S += delta;
 	if (CountTime > 2.0f && g_bGenerate[0] == false) {
 		EatChange_Generate(0);
 	}
@@ -189,7 +217,7 @@ void onFrameMove(float delta)
 			}
 		}
 	}
-	// Enemy Generate
+	//First Enemy Generate
 	if (EnemyTime > 2.0f && !_bEnemyGen[_iGenCount] && _iGenCount<10) {
 
 		EnemyGen(_iGenCount, 1);
@@ -198,13 +226,8 @@ void onFrameMove(float delta)
 	}
 	for (int i = 0; i < _iGenCount; i++) {
 		if (g_Enemy[i] == nullptr) break;
-		srand(time(NULL));
-		/* 指定亂數範圍 */
-		float _fmin = 1.0f;
-		float _fmax = 5.0f;
-		float _fx = (_fmax - _fmin) * rand() / (RAND_MAX + 1.0) + _fmin;
 		if (_bEnemyGen[i] && _bEnemyDel[i] == false) {
-			g_Enemy[i]->_fAttackDur = _fx;
+			g_Enemy[i]->_fAttackDur = getRandomf(5.0f,1.0f);
 			EnemyMove(1,i,delta);
 			for (int j = 0; j < _iOut; j++) {
 				bool check = g_Enemy[i]->CheckCollider(g_Missile[j]->getPos().x, g_Missile[j]->getPos().y, 1.0f);
@@ -223,6 +246,38 @@ void onFrameMove(float delta)
 		if (!g_Enemy[i]->_bAttackOut) {
 			Attack(delta,i, g_Enemy[i]);
 		}
+	}
+	//Second Enemy Generate
+	if (EnemyTime_S > getRandomf(6.0f,1.0f) && !_bEnemyGen_S[_iGenCount_S] && _iGenCount_S < 10) {
+
+		EnemyGen(_iGenCount_S, 2);
+		_iGenCount_S++;
+		EnemyTime_S = 0.0f;
+	}
+	for (int i = 0; i < _iGenCount_S; i++) {
+		if (g_Enemy_S[i] != nullptr) {
+			if (_bEnemyGen_S[i] && _bEnemyDel_S[i] == false) {
+				g_Enemy_S[i]->_fAttackDur = getRandomf(3.0f, 1.0f);
+				EnemyMove(2, i, delta);
+				for (int j = 0; j < _iOut; j++) {
+					bool check = g_Enemy_S[i]->CheckCollider(g_Missile[j]->getPos().x, g_Missile[j]->getPos().y, 1.0f);
+					if (check) {
+						_iDieCount_S[i]++;
+					}
+					if (_iDieCount_S[i] == 2) {
+						_bEnemyDel_S[i] = true;
+						g_Enemy_S[i]->_bEnemyDel = true;
+						if (g_Enemy_S[i]->_bAttackOut) delete g_Enemy_S[i];
+						_iDieCount_S[i] = 0;
+					}
+				}
+				//Attack(delta);
+			}
+			if (!g_Enemy_S[i]->_bAttackOut) {
+				Attack(delta, i, g_Enemy_S[i]);
+			}
+		}
+		
 	}
 	if (_fShootDur >= 3.5f) {
 		_fShootDur = 0.5f;
@@ -345,6 +400,7 @@ void ProtectRotation(float delta) {
 	if (g_fFAngle > 360.0) g_fFAngle -= 360;
 	else if (g_fFAngle < 0.0) g_fFAngle += 360.0;
 	mxR = RotateZ(g_fFAngle);
+	g_FiveStar->setPos(vec3((g_fFiveStar[0])* mxR._m->x+ g_Player[0]->getPos().x, -(g_fFiveStar[1] * mxR._m->y + g_Player[0]->getPos().y),0));
 	g_FiveStar->setTRSMatrix( mxGT  * g_Flightercenter * g_initmxS[0] * mxR * g_finitmxT);
 }
 //---------------------------------------------------------------------------------------------------------------------
@@ -395,20 +451,11 @@ void Shoot(float delta) {
 
 // for 1-5
 void CloudMove(float delta) {
-	srand(time(NULL));
-	/* 指定亂數範圍 */
-	int _imin = 3;
-	int _imax = 10;
-
-	float _fmin = -13.0f;
-	float _fmax = 13.0f;
-	
 	mat4 mxT;
 	for (int i = 0; i < 4; i++) {
-		float _fx = (_fmax - _fmin) * rand() / (RAND_MAX + 1.0) + _fmin;
 		g_fCloud[i][1] -= delta * g_fSpeedCloud[i];
 		if (g_fCloud[i][1] < -13.0f) {
-			g_fCloud[i][0] = _fx; g_fCloud[i][1] = 13.0f;
+			g_fCloud[i][0] = getRandomf(13.0f,-13.0f); g_fCloud[i][1] = 13.0f;
 			g_fSpeedCloud[i] = rand() % (_imax - _imin + 1) + _imin;
 		}
 		mxT = Translate(g_fCloud[i][0], g_fCloud[i][1], g_fCloud[i][2]);
@@ -464,16 +511,27 @@ void EnemyGen(int index,int type) {
 		g_Enemy[index]->setColor(vColor);
 		g_fEnemy[index][0] = -12.0f; g_fEnemy[index][1] = 11; g_fEnemy[index][2] = 0;
 		mxT = Translate(g_fEnemy[index][0], g_fEnemy[index][1], g_fEnemy[index][2]);
+		g_Enemy[index]->setPos(vec3(g_fEnemy[index][0], g_fEnemy[index][1], g_fEnemy[index][2] = 0));
+		g_Enemy[index]->setTRSMatrix(mxT);
+		g_Enemy[index]->setShader(g_mxModelView, g_mxProjection);
 		break;
-
 	case 2:
+		_bEnemyGen_S[index] = true;
+		g_Enemy_S[index] = new Enemy(2);
+		g_EnemyType_S[index] = 1;
+		_iInverse_S[index] =  1 ;
+		vColor = vec4(0, 0, 1, 1);
+		g_Enemy_S[index]->setColor(vColor);
+		g_fEnemy_S[index][0] = getRandomf(10.0f, -10.0f); g_fEnemy_S[index][1] = 8; g_fEnemy_S[index][2] = 0;
+		mxT = Translate(g_fEnemy_S[index][0], g_fEnemy_S[index][1], g_fEnemy_S[index][2]);
+		g_Enemy_S[index]->setPos(vec3(g_fEnemy_S[index][0], g_fEnemy_S[index][1], g_fEnemy_S[index][2] = 0));
+		g_Enemy_S[index]->setTRSMatrix(mxT);
+		g_Enemy_S[index]->setShader(g_mxModelView, g_mxProjection);
 		break;
 	case 3:
 		break;
 	}
-	g_Enemy[index]->setPos(vec3(g_fEnemy[index][0], g_fEnemy[index][1], g_fEnemy[index][2] = 0));
-	g_Enemy[index]->setTRSMatrix(mxT);
-	g_Enemy[index]->setShader(g_mxModelView, g_mxProjection);
+	
 }
 
 void EnemyMove(int type, int index,float delta) {
@@ -490,6 +548,17 @@ void EnemyMove(int type, int index,float delta) {
 		mxT = Translate(g_fEnemy[index][0] + g_fEnemyDir[index][0], g_fEnemy[index][1] + g_fEnemyDir[index][1], g_fEnemy[index][2]);
 		g_Enemy[index]->setPos(vec3(g_fEnemy[index][0] + g_fEnemyDir[index][0], g_fEnemy[index][1] + g_fEnemyDir[index][1], g_fEnemy[index][2]));
 		g_Enemy[index]->setTRSMatrix(mxT);
+		//printf("(%f,%f,%d,%d)\n", g_Enemy[index]->getPos().x, g_fEnemyCount[index], _iInverse[index],index);
+		break;
+	case 2:
+		if (g_Enemy_S[index]->getPos().y >= 12.0f)  _iInverse_S[index] = -1;
+		if (g_Enemy_S[index]->getPos().y <= -12.0f)  _iInverse_S[index] = 1;
+		g_fEnemyCount_S[index] = delta * 2 * _iInverse_S[index] + g_fEnemyCount_S[index];
+		g_fEnemyDir_S[index][0] = sin(g_fEnemyCount_S[index] * 0.5 * PI *2);
+		g_fEnemyDir_S[index][1] = g_fEnemyCount_S[index]*5;
+		mxT = Translate(g_fEnemy_S[index][0] + g_fEnemyDir_S[index][0], g_fEnemy_S[index][1] + g_fEnemyDir_S[index][1], g_fEnemy_S[index][2]);
+		g_Enemy_S[index]->setPos(vec3(g_fEnemy_S[index][0] + g_fEnemyDir_S[index][0], g_fEnemy_S[index][1] + g_fEnemyDir_S[index][1], g_fEnemy_S[index][2]));
+		g_Enemy_S[index]->setTRSMatrix(mxT);
 		//printf("(%f,%f,%d,%d)\n", g_Enemy[index]->getPos().x, g_fEnemyCount[index], _iInverse[index],index);
 		break;
 	}
@@ -518,10 +587,17 @@ void Attack(float delta,int i,Enemy* Enemy) {
 		if (Enemy->g_Attack[j] != nullptr) {
 			Enemy->g_fAttackDir[j] -= delta;
 			mxT = Translate(Enemy->g_AttackInitPos[j][0], Enemy->g_AttackInitPos[j][1] + Enemy->g_fAttackDir[j] * Enemy->_fAttackSpeed, 0);
-			Enemy->g_Attack[j]->setTRSMatrix(mxT);
 			Enemy->g_Attack[j]->setPos(vec3(Enemy->g_AttackInitPos[j][0], Enemy->g_AttackInitPos[j][1] + Enemy->g_fAttackDir[j] * Enemy->_fAttackSpeed, 0));
+			Enemy->g_Attack[j]->setTRSMatrix(mxT);
 			//out of windowns reset
 			bool _bAttack = g_Player[0]->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y, 1.5);
+			//protecy player
+			// 
+			//bool _bDefend = g_FiveStar->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y, 1);
+			//printf("(%f,%f),(%f,%f)\n", g_FiveStar->getPos().x, g_FiveStar->getPos().y, g_Player[0]->getPos().x, g_Player[0]->getPos().y);
+			/*if (_bDefend) {
+				Enemy->_bAttackSus[j] = true;
+			}*/
 			if (_bAttack) {
 				printf("Attack");
 				Enemy->_bAttackSus[j] = true;
@@ -548,10 +624,15 @@ void Attack(float delta,int i,Enemy* Enemy) {
 				Enemy->_bAttackOut = true;
 			}
 		}
-		
 	}
 }
-
+float getRandomf(float _max, float _min) {
+	std::random_device rd;
+	std::default_random_engine eng(rd());
+	std::uniform_real_distribution<float> distr(_min, _max);
+	float fx = distr(eng);
+	return fx;
+}
 //----------------------------------------------------------------------------------------------------------------------------
 void UpdateMatrix()
 {
@@ -583,6 +664,14 @@ void Win_Keyboard(unsigned char key, int x, int y)
 			delete g_Cloud[i];
 		}
 		delete g_FiveStar;
+		for (int i = 0; i < _iGenCount; i++) {
+			if(g_Enemy[i]!= NULL)
+				delete g_Enemy[i];
+		}
+		for (int i = 0; i < _iGenCount_S; i++) {
+			if (g_Enemy_S[i] != nullptr)
+				delete g_Enemy_S[i];
+		}
 		exit(EXIT_SUCCESS);
 		break;
 	}
