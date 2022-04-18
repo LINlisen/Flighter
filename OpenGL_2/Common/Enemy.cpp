@@ -26,8 +26,8 @@ Enemy::Enemy(int type)
 				_Points[4].z = -1.0f; _Points[4].w = 1.0f;
 			}
 			else {
-				_Points[i].x = RADIUS * cosf(M_PI * 2.0f * i / 200);
-				_Points[i].y = -RADIUS * sinf(M_PI * 2.0f * i / 200);
+				_Points[i].x = (RADIUS+0.4f) * cosf(M_PI * 2.0f * i / 200);
+				_Points[i].y = (RADIUS + 0.4f) * sinf(M_PI * 2.0f * i / 200);
 				_Points[i].z = 0.0f;
 				_Points[i].w = 1.0f;
 			}
@@ -40,25 +40,25 @@ Enemy::Enemy(int type)
 		_Points = new vec4[ENEMY_ONE];
 		for (int i = 0; i < ENEMY_ONE; i++) {
 			if (i < 5) {
-				_Points[0].x = SARTRADIUS * cos(90 * 2 * PI / 360)* sin(i);
-				_Points[0].y = SARTRADIUS * sin(90 * 2 * PI / 360) * sin(i);
+				_Points[0].x = SARTRADIUS * cos(90 * 2 * PI / 180)* sin(i);
+				_Points[0].y = SARTRADIUS * sin(90 * 2 * PI / 180) * sin(i);
 				_Points[0].z = 1.0f; _Points[0].w = 1.0f;
-				_Points[1].x = SARTRADIUS * cos(306 * 2 * PI / 360) * sin(i);
-				_Points[1].y = SARTRADIUS * sin(306 * 2 * PI / 360) * sin(i);
+				_Points[1].x = SARTRADIUS * cos(306 * 2 * PI / 180) * sin(i);
+				_Points[1].y = SARTRADIUS * sin(306 * 2 * PI / 180) * sin(i);
 				_Points[1].z = -1.0f; _Points[1].w = 1.0f;
-				_Points[2].x = SARTRADIUS * cos(162 * 2 * PI / 360) * sin(i);
-				_Points[2].y = SARTRADIUS * sin(162 * 2 * PI / 360) * sin(i);
+				_Points[2].x = SARTRADIUS * cos(162 * 2 * PI / 180) * sin(i);
+				_Points[2].y = SARTRADIUS * sin(162 * 2 * PI / 180) * sin(i);
 				_Points[2].z = 1.0f; _Points[2].w = 1.0f;
-				_Points[3].x = SARTRADIUS * cos(18 * 2 * PI / 360) * sin(i);
-				_Points[3].y = SARTRADIUS * sin(18 * 2 * PI / 360) * sin(i);
+				_Points[3].x = SARTRADIUS * cos(18 * 2 * PI / 180) * sin(i);
+				_Points[3].y = SARTRADIUS * sin(18 * 2 * PI / 180) * sin(i);
 				_Points[3].z = 1.0f; _Points[3].w = 1.0f;
-				_Points[4].x = SARTRADIUS * cos(234 * 2 * PI / 360) * sin(i);
-				_Points[4].y = SARTRADIUS * sin(234 * 2 * PI / 360) * sin(i);
+				_Points[4].x = SARTRADIUS * cos(234 * 2 * PI / 180) * sin(i);
+				_Points[4].y = SARTRADIUS * sin(234 * 2 * PI / 180) * sin(i);
 				_Points[4].z = 1.0f; _Points[4].w = 1.0f;
 			}
 			else {
-				_Points[i].x = RADIUS * cosf(M_PI * 2.0f * i / 200);
-				_Points[i].y = -RADIUS * sinf(M_PI * 2.0f * i / 200);
+				_Points[i].x = (RADIUS + 0.2f) * cosf(M_PI * 2.0f * i / 200);
+				_Points[i].y = -(RADIUS + 0.2f) * sinf(M_PI * 2.0f * i / 200);
 				_Points[i].z = 0.0f;
 				_Points[i].w = 1.0f;
 			}

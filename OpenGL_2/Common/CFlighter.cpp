@@ -331,8 +331,10 @@ void CFlighter::setColor(GLfloat vColor[4], int index)
 
 void CFlighter::draw(int type)
 {
-	glUseProgram(_uiProgram);
-	glBindVertexArray(_uiVao);
+	if (_uiProgram != NULL) {
+		glUseProgram(_uiProgram);
+		glBindVertexArray(_uiVao);
+	}
 	if (_bUpdateMV) {
 		_mxMVFinal = _mxView * _mxTRS;
 		_bUpdateMV = false;

@@ -75,29 +75,30 @@ float EnemyTime = 0.0f;
 bool _bEnemyGen[10] = { false };
 bool _bEnemyDel[10] = { false };
 //Second Enemy
-Enemy* g_Enemy_S[10];
-int g_EnemyType_S[10];
+Enemy* g_Enemy_S[5];
+int g_EnemyType_S[5];
 int _iGenCount_S;
-int _iInverse_S[10] = { 1 };
-int _iDieCount_S[10];
-float g_fEnemy_S[10][3];
-float g_fEnemyDir_S[10][3];
-float g_fEnemyCount_S[10];
+int _iInverse_S[5] = { 1 };
+int _iDieCount_S[5];
+float g_fEnemy_S[5][3];
+float g_fEnemyDir_S[5][3];
+float g_fEnemyCount_S[5];
 float EnemyTime_S = 0.0f;
-bool _bEnemyGen_S[10] = { false };
-bool _bEnemyDel_S[10] = { false };
+float g_fEnemy_S_Angle[5] = { 0.0f };
+bool _bEnemyGen_S[5] = { false };
+bool _bEnemyDel_S[5] = { false };
 //Third Enemy
-Enemy* g_Enemy_T[10];
-int g_EnemyType_T[10];
+Enemy* g_Enemy_T[5];
+int g_EnemyType_T[5];
 int _iGenCount_T;
-int _iInverse_T[10] = { 1 };
-int _iDieCount_T[10];
-float g_fEnemy_T[10][3];
-float g_fEnemyDir_T[10][3];
-float g_fEnemyCount_T[10];
+int _iInverse_T[5] = { 1 };
+int _iDieCount_T[5];
+float g_fEnemy_T[5][3];
+float g_fEnemyDir_T[5][3];
+float g_fEnemyCount_T[5];
 float EnemyTime_T = 0.0f;
-bool _bEnemyGen_T[10] = { false };
-bool _bEnemyDel_T[10] = { false };
+bool _bEnemyGen_T[5] = { false };
+bool _bEnemyDel_T[5] = { false };
 //for 3-2
 CFlighter* g_UpgradeOne[2];
 float g_fUpgradeOne[2][3];
@@ -267,7 +268,7 @@ void onFrameMove(float delta)
 		}
 	}
 	//Second Enemy Generate
-	if (EnemyTime_S > getRandomf(6.0f,1.0f) && !_bEnemyGen_S[_iGenCount_S] && _iGenCount_S < 10) {
+	if (EnemyTime_S > getRandomf(10.0f,5.0f) && !_bEnemyGen_S[_iGenCount_S] && _iGenCount_S < 5) {
 
 		EnemyGen(_iGenCount_S, 2);
 		_iGenCount_S++;
@@ -529,6 +530,7 @@ void EnemyGen(int index,int type) {
 		_cb = getRandomf(1.0f, 0.0f);
 		vColor = vec4(_cr, _cg, _cb, 1);
 		g_Enemy[index]->setColor(vColor);
+		g_Enemy[index]->_fAttackDur = getRandomf(10.0f, 3.0f);
 		g_fEnemy[index][0] = -12.0f; g_fEnemy[index][1] = 11; g_fEnemy[index][2] = 0;
 		mxT = Translate(g_fEnemy[index][0], g_fEnemy[index][1], g_fEnemy[index][2]);
 		g_Enemy[index]->setPos(vec3(g_fEnemy[index][0], g_fEnemy[index][1], g_fEnemy[index][2] = 0));
@@ -545,6 +547,7 @@ void EnemyGen(int index,int type) {
 		_cb = getRandomf(1.0f, 0.0f);
 		vColor = vec4(_cr, _cg, _cb, 1);
 		g_Enemy_S[index]->setColor(vColor);
+		g_Enemy_S[index]->_fAttackDur = getRandomf(10.0f, 3.0f);
 		g_fEnemy_S[index][0] = getRandomf(10.0f, -10.0f); g_fEnemy_S[index][1] = 8; g_fEnemy_S[index][2] = 0;
 		mxT = Translate(g_fEnemy_S[index][0], g_fEnemy_S[index][1], g_fEnemy_S[index][2]);
 		g_Enemy_S[index]->setPos(vec3(g_fEnemy_S[index][0], g_fEnemy_S[index][1], g_fEnemy_S[index][2] = 0));
@@ -593,14 +596,19 @@ void EnemyMove(int type, int index,float delta) {
 		g_fEnemyCount_S[index] = delta * 2 * _iInverse_S[index] + g_fEnemyCount_S[index];
 		g_fEnemyDir_S[index][0] = sin(g_fEnemyCount_S[index] * 0.5 * PI *2);
 		g_fEnemyDir_S[index][1] = g_fEnemyCount_S[index]*5;
+		mat4 mxR;
+		g_fEnemy_S_Angle[index] += delta * 90.0f;
+		if (g_fEnemy_S_Angle[index] > 360.0) g_fEnemy_S_Angle[index] -= 360;
+		else if (g_fEnemy_S_Angle[index] < 0.0) g_fEnemy_S_Angle[index] += 360.0;
+		mxR = RotateZ(g_fEnemy_S_Angle[index]);
 		mxT = Translate(g_fEnemy_S[index][0] + g_fEnemyDir_S[index][0], g_fEnemy_S[index][1] + g_fEnemyDir_S[index][1], g_fEnemy_S[index][2]);
 		g_Enemy_S[index]->setPos(vec3(g_fEnemy_S[index][0] + g_fEnemyDir_S[index][0], g_fEnemy_S[index][1] + g_fEnemyDir_S[index][1], g_fEnemy_S[index][2]));
-		g_Enemy_S[index]->setTRSMatrix(mxT);
+		g_Enemy_S[index]->setTRSMatrix(mxT* mxR);
 		//printf("(%f,%f,%d,%d)\n", g_Enemy[index]->getPos().x, g_fEnemyCount[index], _iInverse[index],index);
 		break;
 	}
 }
-
+//for 2-4
 void Attack(float delta,int i,Enemy* Enemy,int type) {
 	mat4 mxT;
 	vec4 vColor = vec4(1, 0, 0, 1);
@@ -621,8 +629,9 @@ void Attack(float delta,int i,Enemy* Enemy,int type) {
 		Enemy->_iFree--;
 		Enemy->_fAttackTime = 0;
 	}
-	for (int j = 0; j < 15 - Enemy->_iFree; j++) {
+	for (int j = 0; j < 10 - Enemy->_iFree; j++) {
 		bool _bAttack = false;
+		bool _bDefend = false;
 		if (Enemy->g_Attack[j] != nullptr) {
 			Enemy->g_fAttackDir[j] -= delta;
 			switch (type)
@@ -635,13 +644,14 @@ void Attack(float delta,int i,Enemy* Enemy,int type) {
 				_bAttack = g_Player[0]->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y, 1.5);
 				//protecy player
 				// 
-				//bool _bDefend = g_FiveStar->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y, 1);
+				//_bDefend = g_FiveStar->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y, 1);
 				//printf("(%f,%f),(%f,%f)\n", g_FiveStar->getPos().x, g_FiveStar->getPos().y, g_Player[0]->getPos().x, g_Player[0]->getPos().y);
-				/*if (_bDefend) {
-					Enemy->_bAttackSus[j] = true;
-				}*/
+				//if (_bDefend) {
+				//	Enemy->_bAttackSus[j] = true;
+				//	printf("Defend\n");
+				//}
 				if (_bAttack) {
-					printf("Attack");
+					printf("Attack\n");
 					Enemy->_bAttackSus[j] = true;
 					_fShootDur += 1.0f;
 				}
@@ -660,13 +670,14 @@ void Attack(float delta,int i,Enemy* Enemy,int type) {
 				_bAttack = g_Player[0]->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y, 1.5);
 				//protecy player
 				// 
-				//bool _bDefend = g_FiveStar->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y, 1);
+				//_bDefend = g_FiveStar->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y, 1);
 				//printf("(%f,%f),(%f,%f)\n", g_FiveStar->getPos().x, g_FiveStar->getPos().y, g_Player[0]->getPos().x, g_Player[0]->getPos().y);
-				/*if (_bDefend) {
-					Enemy->_bAttackSus[j] = true;
-				}*/
+				//if (_bDefend) {
+				//	Enemy->_bAttackSus[j] = true;
+				//	printf("Defend\n");
+				//}
 				if (_bAttack) {
-					printf("Attack");
+					printf("Attack\n");
 					Enemy->_bAttackSus[j] = true;
 					_fShootDur += 1.0f;
 				}
@@ -763,11 +774,11 @@ void Win_Keyboard(unsigned char key, int x, int y)
 		}
 		delete g_FiveStar;
 		for (int i = 0; i < _iGenCount; i++) {
-			if(g_Enemy[i]!= NULL)
+			if (g_Enemy[i] != NULL && !_bEnemyDel[i])
 				delete g_Enemy[i];
 		}
 		for (int i = 0; i < _iGenCount_S; i++) {
-			if (g_Enemy_S[i] != nullptr)
+			if (g_Enemy_S[i] != nullptr && !_bEnemyDel_S[i])
 				delete g_Enemy_S[i];
 		}
 		exit(EXIT_SUCCESS);
