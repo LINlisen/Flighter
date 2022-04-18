@@ -85,6 +85,7 @@ float g_fEnemyDir_S[5][3];
 float g_fEnemyCount_S[5];
 float EnemyTime_S = 0.0f;
 float g_fEnemy_S_Angle[5] = { 0.0f };
+float g_fTraceDir[5][2] = { 0.0f };
 bool _bEnemyGen_S[5] = { false };
 bool _bEnemyDel_S[5] = { false };
 //Third Enemy
@@ -99,6 +100,7 @@ float g_fEnemyCount_T[5];
 float EnemyTime_T = 0.0f;
 bool _bEnemyGen_T[5] = { false };
 bool _bEnemyDel_T[5] = { false };
+bool _bSetTrace[5] = { false };
 //for 3-2
 CFlighter* g_UpgradeOne[2];
 float g_fUpgradeOne[2][3];
@@ -208,6 +210,19 @@ void GL_Display(void)
 			}
 		}
 	}
+	for (int i = 0; i < _iGenCount_T; i++) {
+		if (_bEnemyGen_T[i] && !(_bEnemyDel_T[i])) {
+			g_Enemy_T[i]->draw();
+			//printf("%d:(%f,%f)\n", i, g_Enemy_S[i]->getPos().x, g_Enemy_S[i]->getPos().y);
+		}
+		for (int j = 0; j < g_Enemy_T[i]->_iOut; j++) {
+			if (!g_Enemy_T[i]->_bAttackOut) {
+				if (g_Enemy_T[i] != nullptr && g_Enemy_T[i]->g_Attack[j] != nullptr)
+					g_Enemy_T[i]->g_Attack[j]->draw(7);
+				//printf("%d:%d draw\n", i, j);
+			}
+		}
+	}
 	g_FiveStar->draw(4);
 	glutSwapBuffers();	// ец┤л Frame Buffer
 }
@@ -221,6 +236,7 @@ void onFrameMove(float delta)
 	CountTime += delta;
 	EnemyTime += delta;
 	EnemyTime_S += delta;
+	EnemyTime_T += delta;
 	if (CountTime > 2.0f && g_bGenerate[0] == false) {
 		EatChange_Generate(0);
 	}
@@ -298,6 +314,39 @@ void onFrameMove(float delta)
 			}
 		}
 		
+	}
+	//Third Enemy Gen and Attack
+	if (EnemyTime_T > getRandomf(20.0f, 15.0f) && !_bEnemyGen_T[_iGenCount_T] && _iGenCount_T < 5) {
+
+		EnemyGen(_iGenCount_T, 3);
+		_iGenCount_T++;
+		EnemyTime_T = 0.0f;
+		printf("Gen 3\n");
+	}
+	for (int i = 0; i < _iGenCount_T; i++) {
+		if (g_Enemy_T[i] != nullptr) {
+			if (_bEnemyGen_T[i] && _bEnemyDel_T[i] == false) {
+				g_Enemy_T[i]->_fAttackDur = getRandomf(3.0f, 1.0f);
+				//EnemyMove(2, i, delta);
+				for (int j = 0; j < _iOut; j++) {
+					bool check = g_Enemy_T[i]->CheckCollider(g_Missile[j]->getPos().x, g_Missile[j]->getPos().y, 1.0f);
+					if (check) {
+						_iDieCount_T[i]++;
+					}
+					if (_iDieCount_T[i] == 2) {
+						_bEnemyDel_T[i] = true;
+						g_Enemy_T[i]->_bEnemyDel = true;
+						if (g_Enemy_T[i]->_bAttackOut) delete g_Enemy_T[i];
+						_iDieCount_T[i] = 0;
+					}
+				}
+				//Attack(delta);
+			}
+			if (!g_Enemy_T[i]->_bAttackOut && g_Enemy_T[i] != nullptr) {
+				Attack(delta, i, g_Enemy_T[i], 3);
+			}
+		}
+
 	}
 	if (_fShootDur >= 3.5f) {
 		_fShootDur = 0.5f;
@@ -555,20 +604,20 @@ void EnemyGen(int index,int type) {
 		g_Enemy_S[index]->setShader(g_mxModelView, g_mxProjection);
 		break;
 	case 3:
-		_bEnemyGen_S[index] = true;
-		g_Enemy_S[index] = new Enemy(3);
-		g_EnemyType_S[index] = 1;
-		_iInverse_S[index] = 1;
+		_bEnemyGen_T[index] = true;
+		g_Enemy_T[index] = new Enemy(3);
+		g_EnemyType_T[index] = 1;
+		_iInverse_T[index] = 1;
 		_cr = getRandomf(1.0f, 0.0f);
 		_cg = getRandomf(1.0f, 0.0f);
 		_cb = getRandomf(1.0f, 0.0f);
 		vColor = (_cr, _cg, _cb, 1);
-		g_Enemy_S[index]->setColor(vColor);
-		g_fEnemy_S[index][0] = getRandomf(10.0f, -10.0f); g_fEnemy_S[index][1] = 8; g_fEnemy_S[index][2] = 0;
-		mxT = Translate(g_fEnemy_S[index][0], g_fEnemy_S[index][1], g_fEnemy_S[index][2]);
-		g_Enemy_S[index]->setPos(vec3(g_fEnemy_S[index][0], g_fEnemy_S[index][1], g_fEnemy_S[index][2] = 0));
-		g_Enemy_S[index]->setTRSMatrix(mxT);
-		g_Enemy_S[index]->setShader(g_mxModelView, g_mxProjection);
+		g_Enemy_T[index]->setColor(vColor);
+		g_fEnemy_T[index][0] = 0.0f; g_fEnemy_T[index][1] = 0.0f; g_fEnemy_T[index][2] = 0;
+		mxT = Translate(g_fEnemy_T[index][0], g_fEnemy_T[index][1], g_fEnemy_T[index][2]);
+		g_Enemy_T[index]->setPos(vec3(g_fEnemy_T[index][0], g_fEnemy_T[index][1], g_fEnemy_T[index][2] = 0));
+		g_Enemy_T[index]->setTRSMatrix(mxT);
+		g_Enemy_T[index]->setShader(g_mxModelView, g_mxProjection);
 		break;
 	}
 	
@@ -629,7 +678,7 @@ void Attack(float delta,int i,Enemy* Enemy,int type) {
 		Enemy->_iFree--;
 		Enemy->_fAttackTime = 0;
 	}
-	for (int j = 0; j < 10 - Enemy->_iFree; j++) {
+	for (int j = 0; j <ATTACK_NUM - Enemy->_iFree; j++) {
 		bool _bAttack = false;
 		bool _bDefend = false;
 		if (Enemy->g_Attack[j] != nullptr) {
@@ -665,6 +714,33 @@ void Attack(float delta,int i,Enemy* Enemy,int type) {
 					mxT = Translate(Enemy->g_AttackInitPos[j][0] + (Enemy->g_fAttackDir[j] * Enemy->_fAttackSpeed), Enemy->g_AttackInitPos[j][1], 0);
 					Enemy->g_Attack[j]->setPos(vec3(Enemy->g_AttackInitPos[j][0] + (Enemy->g_fAttackDir[j] * Enemy->_fAttackSpeed), Enemy->g_AttackInitPos[j][1], 0));
 				}
+				Enemy->g_Attack[j]->setTRSMatrix(mxT);
+				//out of windowns reset
+				_bAttack = g_Player[0]->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y, 1.5);
+				//protecy player
+				// 
+				//_bDefend = g_FiveStar->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y, 1);
+				//printf("(%f,%f),(%f,%f)\n", g_FiveStar->getPos().x, g_FiveStar->getPos().y, g_Player[0]->getPos().x, g_Player[0]->getPos().y);
+				//if (_bDefend) {
+				//	Enemy->_bAttackSus[j] = true;
+				//	printf("Defend\n");
+				//}
+				if (_bAttack) {
+					printf("Attack\n");
+					Enemy->_bAttackSus[j] = true;
+					_fShootDur += 1.0f;
+				}
+				break;
+			case 3:
+				mat4 mxTrace;
+				if (!_bSetTrace[j]) {
+					_bSetTrace[j] = true;
+					g_fTraceDir[j][0] = g_Player[0]->getPos().x - Enemy->g_AttackInitPos[j][0];
+					g_fTraceDir[j][1] = g_Player[0]->getPos().y - Enemy->g_AttackInitPos[j][1];
+				}
+				mxT = Translate(Enemy->g_AttackInitPos[j][0]+ g_fTraceDir[j][0] * -Enemy->g_fAttackDir[j], Enemy->g_AttackInitPos[j][1] + g_fTraceDir[j][1] * -Enemy->g_fAttackDir[j], 0);
+				mxTrace = Translate(Enemy->getPos().x - Enemy->g_AttackInitPos[j][0], Enemy->getPos().y - Enemy->g_AttackInitPos[j][1], 0);
+				Enemy->g_Attack[j]->setPos(vec3(Enemy->g_AttackInitPos[j][0] + g_fTraceDir[j][0] * -Enemy->g_fAttackDir[j], Enemy->g_AttackInitPos[j][1] + g_fTraceDir[j][1] * -Enemy->g_fAttackDir[j], 0));
 				Enemy->g_Attack[j]->setTRSMatrix(mxT);
 				//out of windowns reset
 				_bAttack = g_Player[0]->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y, 1.5);

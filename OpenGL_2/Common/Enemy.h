@@ -14,24 +14,24 @@ typedef Angel::vec4  point4;
 #define ENEMY_TWO 210
 #define ENEMY_TWO_RADIUS 1.6
 #define VP_HALFWIDTH  12.0f
-
+#define ATTACK_NUM 5
 class Enemy : public CShape
 {
 private:
 
 public:
 	Enemy(int type);
-	CFlighter* g_Attack[10];
-	float g_fAttack[10][3] = { 0 };
-	float g_fAttackDir[10] = { 0 };
-	float g_AttackInitPos[10][3] = { 0 };
+	CFlighter* g_Attack[ATTACK_NUM];
+	float g_fAttack[ATTACK_NUM][3] = { 0 };
+	float g_fAttackDir[ATTACK_NUM] = { 0 };
+	float g_AttackInitPos[ATTACK_NUM][3] = { 0 };
 
-	int _iFree = 10;
+	int _iFree = ATTACK_NUM;
 	int _iOut = 0;
 	int _iNext = 0;
 	bool _bEnemyDel = false;
 	bool _bAttackOut = false;
-	bool _bAttackSus[10] = { false };
+	bool _bAttackSus[ATTACK_NUM] = { false };
 	float _fAttackTime = 0;
 	float _fAttackSpeed = 5;
 	float _fAttackDur = 2.0f;
