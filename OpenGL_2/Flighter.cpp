@@ -86,6 +86,18 @@ float g_fEnemyCount_S[10];
 float EnemyTime_S = 0.0f;
 bool _bEnemyGen_S[10] = { false };
 bool _bEnemyDel_S[10] = { false };
+//Third Enemy
+Enemy* g_Enemy_T[10];
+int g_EnemyType_T[10];
+int _iGenCount_T;
+int _iInverse_T[10] = { 1 };
+int _iDieCount_T[10];
+float g_fEnemy_T[10][3];
+float g_fEnemyDir_T[10][3];
+float g_fEnemyCount_T[10];
+float EnemyTime_T = 0.0f;
+bool _bEnemyGen_T[10] = { false };
+bool _bEnemyDel_T[10] = { false };
 //for 3-2
 CFlighter* g_UpgradeOne[2];
 float g_fUpgradeOne[2][3];
@@ -503,18 +515,19 @@ void EatChangeMove(int type, float delta) {
 }
 //for 2-1-> 2-3
 void EnemyGen(int index,int type) {
-	int _imin = 1;
-	int _imax = 1;
 	vec4 vColor = vec4(1, 0, 0, 1);
 	mat4 mxT;
-	srand(time(NULL));
-	int _ix = rand() % (_imax - _imin + 1) + _imin;
+	float _cr, _cg, _cb;
 	switch (type)
 	{
 	case 1:
 		_bEnemyGen[index] = true;
 		g_Enemy[index] = new Enemy(1);
 		g_EnemyType[index] = 1;
+		_cr = getRandomf(1.0f, 0.0f);
+		_cg = getRandomf(1.0f, 0.0f);
+		_cb = getRandomf(1.0f, 0.0f);
+		vColor = vec4(_cr, _cg, _cb, 1);
 		g_Enemy[index]->setColor(vColor);
 		g_fEnemy[index][0] = -12.0f; g_fEnemy[index][1] = 11; g_fEnemy[index][2] = 0;
 		mxT = Translate(g_fEnemy[index][0], g_fEnemy[index][1], g_fEnemy[index][2]);
@@ -527,7 +540,10 @@ void EnemyGen(int index,int type) {
 		g_Enemy_S[index] = new Enemy(2);
 		g_EnemyType_S[index] = 1;
 		_iInverse_S[index] =  1 ;
-		vColor = vec4(0, 0, 1, 1);
+		_cr = getRandomf(1.0f, 0.0f);
+		_cg = getRandomf(1.0f, 0.0f);
+		_cb = getRandomf(1.0f, 0.0f);
+		vColor = vec4(_cr, _cg, _cb, 1);
 		g_Enemy_S[index]->setColor(vColor);
 		g_fEnemy_S[index][0] = getRandomf(10.0f, -10.0f); g_fEnemy_S[index][1] = 8; g_fEnemy_S[index][2] = 0;
 		mxT = Translate(g_fEnemy_S[index][0], g_fEnemy_S[index][1], g_fEnemy_S[index][2]);
@@ -536,6 +552,20 @@ void EnemyGen(int index,int type) {
 		g_Enemy_S[index]->setShader(g_mxModelView, g_mxProjection);
 		break;
 	case 3:
+		_bEnemyGen_S[index] = true;
+		g_Enemy_S[index] = new Enemy(3);
+		g_EnemyType_S[index] = 1;
+		_iInverse_S[index] = 1;
+		_cr = getRandomf(1.0f, 0.0f);
+		_cg = getRandomf(1.0f, 0.0f);
+		_cb = getRandomf(1.0f, 0.0f);
+		vColor = (_cr, _cg, _cb, 1);
+		g_Enemy_S[index]->setColor(vColor);
+		g_fEnemy_S[index][0] = getRandomf(10.0f, -10.0f); g_fEnemy_S[index][1] = 8; g_fEnemy_S[index][2] = 0;
+		mxT = Translate(g_fEnemy_S[index][0], g_fEnemy_S[index][1], g_fEnemy_S[index][2]);
+		g_Enemy_S[index]->setPos(vec3(g_fEnemy_S[index][0], g_fEnemy_S[index][1], g_fEnemy_S[index][2] = 0));
+		g_Enemy_S[index]->setTRSMatrix(mxT);
+		g_Enemy_S[index]->setShader(g_mxModelView, g_mxProjection);
 		break;
 	}
 	
@@ -678,7 +708,7 @@ void Attack(float delta,int i,Enemy* Enemy,int type) {
 					Enemy->g_fAttackDir[Enemy->_iOut - 1] = 0;
 					Enemy->_iOut--;
 				}
-				break;
+			break;
 			}
 			
 			if (Enemy->_iOut == 0) {
