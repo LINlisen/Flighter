@@ -280,7 +280,7 @@ void onFrameMove(float delta)
 				}
 				//Attack(delta);
 			}
-			if (!g_Enemy_S[i]->_bAttackOut) {
+			if (!g_Enemy_S[i]->_bAttackOut && g_Enemy_S[i]!= nullptr) {
 				Attack(delta, i, g_Enemy_S[i],2);
 			}
 		}
@@ -591,7 +591,7 @@ void Attack(float delta,int i,Enemy* Enemy,int type) {
 		Enemy->_iFree--;
 		Enemy->_fAttackTime = 0;
 	}
-	for (int j = 0; j < 10 - Enemy->_iFree; j++) {
+	for (int j = 0; j < 15 - Enemy->_iFree; j++) {
 		bool _bAttack = false;
 		if (Enemy->g_Attack[j] != nullptr) {
 			Enemy->g_fAttackDir[j] -= delta;
@@ -649,7 +649,10 @@ void Attack(float delta,int i,Enemy* Enemy,int type) {
 	for (int k = 0; k < Enemy->_iOut; k++) {
 		//printf("%d,%d:(%f)\n", i, k, g_Enemy[i]->g_Attack[k]->getPos().y);
 		if (Enemy->g_Attack[k] != nullptr) {
-			if (Enemy->g_Attack[k]->getPos().y < -13.8f || Enemy->_bAttackSus[k]) {
+			switch (type)
+			{
+			case 1:
+				if (Enemy->g_Attack[k]->getPos().y < -13.8f || Enemy->_bAttackSus[k]) {
 				Enemy->_iFree++;
 				for (int l = 0; l < Enemy->_iOut - 1; l++) {
 					Enemy->g_fAttackDir[l] = Enemy->g_fAttackDir[l + 1];
@@ -661,6 +664,23 @@ void Attack(float delta,int i,Enemy* Enemy,int type) {
 				Enemy->g_fAttackDir[Enemy->_iOut - 1] = 0;
 				Enemy->_iOut--;
 			}
+			break;
+			case 2:
+				if (Enemy->g_Attack[k]->getPos().x < -13.8f || Enemy->_bAttackSus[k] || Enemy->g_Attack[k]->getPos().x > 13.8f) {
+					Enemy->_iFree++;
+					for (int l = 0; l < Enemy->_iOut - 1; l++) {
+						Enemy->g_fAttackDir[l] = Enemy->g_fAttackDir[l + 1];
+						Enemy->g_AttackInitPos[l][0] = Enemy->g_AttackInitPos[l + 1][0];
+						Enemy->g_AttackInitPos[l][1] = Enemy->g_AttackInitPos[l + 1][1];
+						Enemy->g_Attack[l] = Enemy->g_Attack[l + 1];
+						Enemy->g_Attack[l]->setPos(vec3(Enemy->g_AttackInitPos[l][0], Enemy->g_AttackInitPos[l][1] + Enemy->g_fAttackDir[l] * Enemy->_fAttackSpeed, 0));
+					}
+					Enemy->g_fAttackDir[Enemy->_iOut - 1] = 0;
+					Enemy->_iOut--;
+				}
+				break;
+			}
+			
 			if (Enemy->_iOut == 0) {
 				Enemy->_bAttackOut = true;
 			}

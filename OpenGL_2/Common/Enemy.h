@@ -21,17 +21,17 @@ private:
 
 public:
 	Enemy(int type);
-	CFlighter* g_Attack[10];
-	float g_fAttack[10][3] = { 0 };
-	float g_fAttackDir[10] = { 0 };
-	float g_AttackInitPos[10][3] = { 0 };
+	CFlighter* g_Attack[15];
+	float g_fAttack[15][3] = { 0 };
+	float g_fAttackDir[15] = { 0 };
+	float g_AttackInitPos[15][3] = { 0 };
 
-	int _iFree = 10;
+	int _iFree = 15;
 	int _iOut = 0;
 	int _iNext = 0;
 	bool _bEnemyDel = false;
 	bool _bAttackOut = false;
-	bool _bAttackSus[10] = { false };
+	bool _bAttackSus[15] = { false };
 	float _fAttackTime = 0;
 	float _fAttackSpeed = 5;
 	float _fAttackDur = 2.0f;
