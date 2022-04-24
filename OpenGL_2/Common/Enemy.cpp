@@ -69,11 +69,25 @@ Enemy::Enemy(int type)
 		break;
 	case 3:
 		_Points = new vec4[ENEMY_ONE];
-		for (int i = 0; i < ENEMY_ONE; i++) {
+		_Points[0].x = -1.2f;
+		_Points[0].y = 0.0f;
+		_Points[1].x = -1.6f;
+		_Points[1].y = 0.0f;
+		_Points[2].x = -1.6f;
+		_Points[2].y = 0.4f;
+		_Points[3].x = -1.2f;
+		_Points[3].y = 0.0f;
+		_Points[4].x = -1.2f;
+		_Points[4].y = 0.4f;
+		_Points[5].x = -1.6f;
+		_Points[5].y = 0.4f;
+		for (int i = 0; i < 6; i++) {
+			_Points[i].z = 1.0f; _Points[i].w = 1.0f;
+		}
+		for (int i = 6; i < ENEMY_ONE; i++) {
 			_Points[i].x = SARTRADIUS * cos(i * 2 * PI / 180);
 			_Points[i].y = SARTRADIUS * sin(i * 2 * PI / 180);
 			_Points[i].z = 1.0f; _Points[i].w = 1.0f;
-			
 		}
 		_Colors = new vec4[ENEMY_ONE];
 		CreateBufferObject(ENEMY_ONE);

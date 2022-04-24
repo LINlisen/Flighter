@@ -70,10 +70,9 @@ void CShape::setShaderName(const char vxShader[], const char fsShader[]) {
 	_pVXshader = new char[len+1];
 	memcpy(_pVXshader, vxShader, len);
 
-	int len1;
-	len1 = strlen(fsShader);
-	_pFSshader = new char[len1+1];
-	memcpy(_pFSshader, fsShader, len1);
+	len = strlen(fsShader);
+	_pFSshader = new char[len+1];
+	memcpy(_pFSshader, fsShader, len);
 }
 
 void CShape::setViewMatrix(mat4& mat) {
@@ -95,10 +94,23 @@ void CShape::setColor(GLfloat vColor[4]) {
 		_Colors[i].z = vColor[2];
 		_Colors[i].w = vColor[3];
 	}
+	for (int i = 0; i < 4; i++) {
+		_fOriginColor[i] = vColor[i];
+	}
+
 	glBindBuffer(GL_ARRAY_BUFFER, _uiBuffer);
 	glBufferSubData(GL_ARRAY_BUFFER, _nVtx * sizeof(vec4), _nVtx * sizeof(vec4), _Colors);
 }// Single color
-
+void CShape::setOriginColor() {
+	for (int i = 0; i < 6; i++) {
+		_Colors[i].x = _fOriginColor[0];
+		_Colors[i].y = _fOriginColor[1];
+		_Colors[i].z = _fOriginColor[2];
+		_Colors[i].w = _fOriginColor[3];
+	}
+	glBindBuffer(GL_ARRAY_BUFFER, _uiBuffer);
+	glBufferSubData(GL_ARRAY_BUFFER, _nVtx * sizeof(vec4), _nVtx * sizeof(vec4), _Colors);
+}
 void CShape::draw() {
 	glUseProgram(_uiProgram);
 	glBindVertexArray(_uiVao);
@@ -141,4 +153,10 @@ vec3 CShape::getPos() {
 bool  CShape::CheckCollider(float x, float y, float r) {
 	if (r * r > (x - _mxPos.x) * (x - _mxPos.x) + (y - _mxPos.y) * (y - _mxPos.y)) return true;
 	else return false;
+}
+
+float CShape::getVectorAngle(vec2 posA, vec2 posB) {
+	float angle = acosf(dot(posA, posB) / (length(posA) * length(posB)));
+	printf("%f\n",angle);
+	return angle*180/3.14;
 }

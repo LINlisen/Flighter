@@ -14,7 +14,7 @@ typedef Angel::vec4  point4;
 #define ENEMY_TWO 210
 #define ENEMY_TWO_RADIUS 1.6
 #define VP_HALFWIDTH  12.0f
-#define ATTACK_NUM 5
+#define ATTACK_NUM 10
 class Enemy : public CShape
 {
 private:

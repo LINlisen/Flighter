@@ -19,8 +19,8 @@ public:
 	int  _nVtx; // 這個物件有幾個 vertex
 	char* _pVXshader, * _pFSshader; //vertex 與 pixel shader 的字元指標
 	GLfloat _fColor[4]; // object's color
+	GLfloat _fOriginColor[4];
 	GLfloat _fClock; // 物件自己的時間
-
 	//  for Shader
 	GLuint _uiProgram;
 	// Vertex Position Attribute
@@ -61,5 +61,6 @@ public:
 	void setPos(vec3 _mxPos);
 	vec3 getPos();
 	bool CheckCollider(float x, float y, float r);
-
+	void setOriginColor();
+	float getVectorAngle(vec2 posA,vec2 posB);
 };
