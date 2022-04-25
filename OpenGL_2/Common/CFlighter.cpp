@@ -89,12 +89,27 @@ CFlighter::CFlighter(int type)
 			_UOPoints[4] = vec4(-1.0f, 1.0f, 0.0f, 1.0f);
 			_UOPoints[5] = vec4(-1.0f, -1.4f, 0.0f, 1.0f);
 		}
+		break;
 	case 7:
 		for (int i = 0; i < 200; i++) {
 			_APoints[i].x = RADIUS * cosf(M_PI * 2.0f * i / 200);
 			_APoints[i].y = RADIUS * sinf(M_PI * 2.0f * i / 200);
 			_APoints[i].z = 0.0f;
 			_APoints[i].w = 1.0f;
+		}
+		break;
+	case 8:
+		for (int i = 0; i < 300; i++) {
+			_UTPoints[i].x = RADIUS * cosf(M_PI * 2.0f * i / 300);
+			_UTPoints[i].y = RADIUS * sinf(M_PI * 2.0f * i / 300);
+			_UTPoints[i].z = 0.0f;
+			_UTPoints[i].w = 1.0f;
+		}
+		for (int i = 300; i < 400; i++) {
+			_UTPoints[i].x = RADIUS*2 * i/300;
+			_UTPoints[i].y = _UTPoints[i].x* _UTPoints[i].x* _UTPoints[i].x;
+			_UTPoints[i].z = 0.0f;
+			_UTPoints[i].w = 1.0f;
 		}
 	}
 	
@@ -159,6 +174,14 @@ void CFlighter::CreateBufferObject(int type)
 		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(_APoints), _APoints);
 		glBufferSubData(GL_ARRAY_BUFFER, sizeof(_APoints), sizeof(_AColors), _AColors);
 	}
+	else if (type == 8) {
+		glGenBuffers(1, &_uiBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, _uiBuffer);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(_UTPoints) + sizeof(_UTColors), NULL, GL_STATIC_DRAW);
+
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(_UTPoints), _UTPoints);
+		glBufferSubData(GL_ARRAY_BUFFER, sizeof(_UTPoints), sizeof(_UTColors), _UTColors);
+	}
 	else {
 		glGenBuffers(1, &_uiBuffer);
 		glBindBuffer(GL_ARRAY_BUFFER, _uiBuffer);
@@ -205,10 +228,15 @@ void CFlighter::setShader(mat4& mxView, mat4& mxProjection, int type, GLuint uiS
 		glEnableVertexAttribArray(vColor);
 		glVertexAttribPointer(vColor, 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizeof(_APoints)));
 	}
+	else if (type == 8) {
+		GLuint vColor = glGetAttribLocation(_uiProgram, "vColor");
+		glEnableVertexAttribArray(vColor);
+		glVertexAttribPointer(vColor, 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizeof(_UTColors)));
+	}
 	else {
 		GLuint vColor = glGetAttribLocation(_uiProgram, "vColor");
 		glEnableVertexAttribArray(vColor);
-		glVertexAttribPointer(vColor, 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizeof(_Points)));
+		glVertexAttribPointer(vColor, 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizeof(_Colors)));
 	}
 	_uiModelView = glGetUniformLocation(_uiProgram, "ModelView");
 	_mxView = mxView;
@@ -301,6 +329,15 @@ void CFlighter::setColor(GLfloat vColor[4], int index)
 			_AColors[i].z = vColor[2];
 			_AColors[i].w = vColor[3];
 		}
+		break;
+	case 8:
+		for (int i = 0; i < UPGRADE_TWO; i++) {
+			_UTColors[i].x = vColor[0];
+			_UTColors[i].y = vColor[1];
+			_UTColors[i].z = vColor[2];
+			_UTColors[i].w = vColor[3];
+		}
+		break;
 	}
 	if (index == 3) {
 		glBindBuffer(GL_ARRAY_BUFFER, _uiBuffer);
@@ -321,6 +358,10 @@ void CFlighter::setColor(GLfloat vColor[4], int index)
 	else if (index == 7) {
 		glBindBuffer(GL_ARRAY_BUFFER, _uiBuffer);
 		glBufferSubData(GL_ARRAY_BUFFER, sizeof(_APoints), sizeof(_AColors), _AColors);
+	}
+	else if (index == 8) {
+		glBindBuffer(GL_ARRAY_BUFFER, _uiBuffer);
+		glBufferSubData(GL_ARRAY_BUFFER, sizeof(_UTPoints), sizeof(_UTColors), _UTColors);
 	}
 	else {
 		glBindBuffer(GL_ARRAY_BUFFER, _uiBuffer);
@@ -354,6 +395,7 @@ void CFlighter::draw(int type)
 	else if(type ==5 ) glDrawArrays(GL_POLYGON, 0, MISSILE_NUM);
 	else if  (type ==6) glDrawArrays(GL_POLYGON, 0, UPGRADE_ONE);
 	else if (type ==7)  glDrawArrays(GL_POLYGON, 0, 200);
+	else if(type == 8)  glDrawArrays(GL_POLYGON, 0, UPGRADE_TWO);
 	else glDrawArrays(GL_TRIANGLES, 0, QUAD_NUM);
 }
 

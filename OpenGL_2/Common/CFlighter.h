@@ -13,6 +13,7 @@ typedef Angel::vec4  point4;
 #define PI 3.1415926f
 #define MISSILE_NUM 500
 #define UPGRADE_ONE 6
+#define UPGRADE_TWO 400
 class CFlighter
 {
 private:
@@ -27,9 +28,12 @@ private:
 	//for MISSILE_NUM
 	vec4 _MPoints[CIRCLE_NUM];
 	vec4 _MColors[CIRCLE_NUM];
-	//for fighter upgrade one
+	//for flighter upgrade one
 	vec4 _UOPoints[UPGRADE_ONE];
 	vec4 _UOColors[UPGRADE_ONE];
+	//for flighter upgrade two
+	vec4 _UTPoints[UPGRADE_TWO];
+	vec4 _UTColors[UPGRADE_TWO];
 	//for enemy Attack
 	vec4 _APoints[200];
 	vec4 _AColors[200];

@@ -31,7 +31,7 @@ constexpr int FLOAT_MAX = 100;
 //for Flighter
 CFlighter* g_Player[FLIGHTER_SIZE];
 float g_fPlayer[FLIGHTER_SIZE][3];
-float _fChangeClock;
+float _fChangeClock = 0;
 mat4 g_initmxS[4];
 mat4 g_initmxT[4];
 mat4 g_Flightercenter = Translate(-0.8f, -1.4f, 0.0f);
@@ -104,8 +104,15 @@ bool _bEnemyDel_T[5] = { false };
 bool _bSetTrace[5][5] = { false };
 //for 3-2
 CFlighter* g_UpgradeOne[2];
+CFlighter* g_UpgradeTwo;
 float g_fUpgradeOne[2][3];
+float g_fUpgradeTwo[3];
+float _fGearClock = 0;
+float _fColdClock = 0;
+float _fGearAngle = 0;
 bool _bUpgrade[3] = { false };
+bool _bUseGear = false;
+bool _bGearCold = false;
 //for 3-2 eat something change
 CFlighter* g_ChangeEat[3];
 float g_fChangeEat[3][3];
@@ -184,6 +191,9 @@ void GL_Display(void)
 				}
 				break;
 			case 1:
+				if (_fChangeClock == 0) {
+					g_UpgradeTwo->draw(8);
+				}
 				break;
 			case 2:
 				break;
@@ -249,17 +259,63 @@ void onFrameMove(float delta)
 	if (CountTime > 2.0f && g_bGenerate[0] == false) {
 		EatChange_Generate(0);
 	}
+	if (CountTime > 15.0f && g_bGenerate[1] == false) {
+		EatChange_Generate(1);
+	}
 	for (int i = 0; i < 3; i++) {
 		if (g_ChangeEat[i] == nullptr) break;
 		if (g_bGenerate[i] && G_bGenDel[i] == false) {
 			EatChangeMove(i, delta);
-			if (g_ChangeEat[i]->CheckCollider(g_Player[0]->getPos().x, g_Player[0]->getPos().y, 0.4f)) {
-				G_bGenDel[i] = true;
-				delete g_ChangeEat[i];
-				_bUpgrade[i] = true;
-				_fShootSpeed = 15;
-				_fShootDur = 0.4f;
+			switch (i)
+			{
+			case 0:
+				if (g_ChangeEat[i]->CheckCollider(g_Player[0]->getPos().x, g_Player[0]->getPos().y, 0.4f)) {
+					G_bGenDel[i] = true;
+					delete g_ChangeEat[i];
+					_bUpgrade[i] = true;
+					_fShootSpeed = 15;
+					_fShootDur = 0.4f;
+				}
+			break;
+			case 1:
+				if (g_ChangeEat[i]->CheckCollider(g_Player[0]->getPos().x, g_Player[0]->getPos().y, 0.4f)) {
+					G_bGenDel[i] = true;
+					delete g_ChangeEat[i];
+					_bUpgrade[i] = true;
+				}
+			break;
 			}
+			
+		}
+	}
+	//use gear
+	if (_bUseGear) {
+		mat4 mxR , mxT;
+		_fGearClock += delta;
+		if (_fGearClock < 5.0f) {
+			_fGearAngle = _fGearClock * 1800;
+			if (_fGearAngle == 360.0f) _fGearAngle -= 360.0f;
+			else if (_fGearAngle == -360.0f)  _fGearAngle += 360.0f;
+			mxR = RotateZ(_fGearAngle);
+			mxT = Translate(g_fUpgradeTwo[0], g_fUpgradeTwo[1], g_fUpgradeTwo[2]);
+			g_UpgradeTwo->setTRSMatrix(mxT * mxGT * mxR);
+			vec4 vColor = vec4(_fGearClock / 5.0f, 0, 0, 1);
+			g_UpgradeTwo->setColor(vColor, 8);
+			g_UpgradeTwo->setPos(vec3(g_fUpgradeTwo[0] + g_fTx, g_fUpgradeTwo[1] + g_fTy, g_fUpgradeTwo[2]));
+		}
+		else {
+			_fGearClock = 0;
+			_bUseGear = false;
+			_bGearCold = true;
+		}
+	}
+	if (_bGearCold) {
+		_fColdClock += delta;
+		vec4 vColor = vec4((1 - _fColdClock / 10.0f), 0, 0, 1);
+		g_UpgradeTwo->setColor(vColor, 8);
+		if (_fColdClock > 10.0f) {
+			_fColdClock = 0.0f;
+			_bGearCold = false;
 		}
 	}
 	//First Enemy Generate
@@ -276,10 +332,11 @@ void onFrameMove(float delta)
 			EnemyMove(1,i,delta);
 			for (int j = 0; j < _iOut; j++) {
 				bool check = g_Enemy[i]->CheckCollider(g_Missile[j]->getPos().x, g_Missile[j]->getPos().y, 1.0f);
+				bool checkGear = g_Enemy[i]->CheckCollider(g_UpgradeTwo->getPos().x, g_UpgradeTwo->getPos().y, 2.0f);
 				if (check) {
 					_iDieCount[i]++;
 				}
-				if (_iDieCount[i] == 2) {
+				if (_iDieCount[i] == 2 || (checkGear && _bUseGear)) {
 					_bEnemyDel[i] = true;
 					g_Enemy[i]->_bEnemyDel = true;
 					if(g_Enemy[i]->_bAttackOut) delete g_Enemy[i];
@@ -306,26 +363,25 @@ void onFrameMove(float delta)
 				EnemyMove(2, i, delta);
 				for (int j = 0; j < _iOut; j++) {
 					bool check = g_Enemy_S[i]->CheckCollider(g_Missile[j]->getPos().x, g_Missile[j]->getPos().y, 1.0f);
+					bool checkGear = g_Enemy_S[i]->CheckCollider(g_UpgradeTwo->getPos().x, g_UpgradeTwo->getPos().y, 2.0f);
 					if (check) {
 						_iDieCount_S[i]++;
 					}
-					if (_iDieCount_S[i] == 2) {
+					if (_iDieCount_S[i] == 2 || (checkGear && _bUseGear)) {
 						_bEnemyDel_S[i] = true;
 						g_Enemy_S[i]->_bEnemyDel = true;
 						if (g_Enemy_S[i]->_bAttackOut) delete g_Enemy_S[i];
 						_iDieCount_S[i] = 0;
 					}
 				}
-				//Attack(delta);
 			}
 			if (!g_Enemy_S[i]->_bAttackOut && g_Enemy_S[i]!= nullptr) {
 				Attack(delta, i, g_Enemy_S[i],2);
 			}
 		}
-		
 	}
 	//Third Enemy Gen and Attack
-	if (EnemyTime_T > getRandomf(15.0f, 8.0f) && !_bEnemyGen_T[_iGenCount_T] && _iGenCount_T < 5) {
+	if (EnemyTime_T > getRandomf(20.0f, 10.0f) && !_bEnemyGen_T[_iGenCount_T] && _iGenCount_T < 5) {
 
 		EnemyGen(_iGenCount_T, 3);
 		_iGenCount_T++;
@@ -339,11 +395,11 @@ void onFrameMove(float delta)
 				//EnemyMove(2, i, delta);
 				for (int j = 0; j < _iOut; j++) {
 					bool check = g_Enemy_T[i]->CheckCollider(g_Missile[j]->getPos().x, g_Missile[j]->getPos().y, 1.0f);
+					bool checkGear = g_Enemy_T[i]->CheckCollider(g_UpgradeTwo->getPos().x, g_UpgradeTwo->getPos().y, 2.0f);
 					if (check) {
 						_iDieCount_T[i]++;
-						
 					}
-					if (_iDieCount_T[i] == 2) {
+					if (_iDieCount_T[i] == 2 || (checkGear && _bUseGear)) {
 						_bEnemyDel_T[i] = true;
 						g_Enemy_T[i]->_bEnemyDel = true;
 						if (g_Enemy_T[i]->_bAttackOut) delete g_Enemy_T[i];
@@ -436,6 +492,15 @@ void CreateQuadRelationship()
 		g_UpgradeOne[i]->setTRSMatrix(mxUT);
 		g_UpgradeOne[i]->setShader(g_mxModelView, g_mxProjection, 6);
 	}
+	//for flighter upgrade two 3-2
+	g_UpgradeTwo = new CFlighter(8);
+	vColor = vec4(0, 0, 1, 1);
+	g_UpgradeTwo->setColor(vColor, 8);
+	g_fUpgradeTwo[0] = -0.8; g_fUpgradeTwo[1] = 2.5; g_fUpgradeTwo[2] = 0;
+	mxUT = Translate(g_fUpgradeTwo[0], g_fUpgradeTwo[1], g_fUpgradeTwo[2]);
+	g_UpgradeTwo->setTRSMatrix(mxUT);
+	g_UpgradeTwo->setPos(vec3(g_fUpgradeTwo[0], g_fUpgradeTwo[1], g_fUpgradeTwo[2]));
+	g_UpgradeTwo->setShader(g_mxModelView, g_mxProjection, 8);
 	//for fivestar create
 	g_FiveStar = new CFlighter(4);
 	vColor = vec4(0.11,0.25, 0.51, 1);
@@ -624,7 +689,7 @@ void EnemyGen(int index,int type) {
 		vColor = (_cr, _cg, _cb, 1);
 		g_Enemy_T[index]->setColor(vColor);
 		g_Enemy_T[index]->_fAttackDur = getRandomf(12.0f, 5.0f);
-		g_fEnemy_T[index][0] = getRandomf(9.0f,-9.0f); g_fEnemy_T[index][1] = getRandomf(9.0f, -9.0f); g_fEnemy_T[index][2] = 0;
+		g_fEnemy_T[index][0] = getRandomf(9.0f,-9.0f); g_fEnemy_T[index][1] = getRandomf(9.0f, 4.0f); g_fEnemy_T[index][2] = 0;
 		mxT = Translate(g_fEnemy_T[index][0], g_fEnemy_T[index][1], g_fEnemy_T[index][2]);
 		g_Enemy_T[index]->setPos(vec3(g_fEnemy_T[index][0], g_fEnemy_T[index][1], g_fEnemy_T[index][2] = 0));
 		g_Enemy_T[index]->setTRSMatrix(mxT);
@@ -912,7 +977,9 @@ void Win_Keyboard(unsigned char key, int x, int y)
 void Win_Mouse(int button, int state, int x, int y) {
 	switch (button) {
 	case GLUT_LEFT_BUTTON:   // 目前按下的是滑鼠左鍵
-		if (state == GLUT_DOWN);
+		if (state == GLUT_DOWN && _bUpgrade[1] && !_bUseGear) {
+			_bUseGear = true;
+		}
 		break;
 	case GLUT_MIDDLE_BUTTON:  // 目前按下的是滑鼠中鍵 
 		if (state == GLUT_DOWN);
@@ -940,7 +1007,13 @@ void Win_PassiveMotion(int x, int y) {
 		mxT = Translate(g_fUpgradeOne[i][0], g_fUpgradeOne[i][1], g_fUpgradeOne[i][2]);
 		g_UpgradeOne[i]->setTRSMatrix(mxT * mxGT);
 	}
-	g_Player[0]->setPos(vec3(-0.8f + g_fTx, -1.4f + g_fTy, 0.0f));
+	if (!_bUseGear) {
+		mxT = Translate(g_fUpgradeTwo[0], g_fUpgradeTwo[1], g_fUpgradeTwo[2]);
+		g_UpgradeTwo->setTRSMatrix(mxT * mxGT);
+		g_UpgradeTwo->setPos(vec3(g_fUpgradeTwo[0] + g_fTx, g_fUpgradeTwo[1] + g_fTy, g_fUpgradeTwo[2]));
+		g_Player[0]->setPos(vec3(-0.8f + g_fTx, -1.4f + g_fTy, 0.0f));
+	}
+
 }
 // The motion callback for a window is called when the mouse moves within the window while one or more mouse buttons are pressed.
 void Win_MouseMotion(int x, int y) {
@@ -951,16 +1024,16 @@ void Win_MouseMotion(int x, int y) {
 void Win_SpecialKeyboard(int key, int x, int y) {
 	mat4 rx, ry, rz;
 	switch (key) {
-	case GLUT_KEY_LEFT:		// 目前按下的是向左方向鍵，移動 Red 往左
+	case GLUT_KEY_LEFT:		// 目前按下的是向左方向鍵
 		
 		break;
-	case GLUT_KEY_RIGHT:		// 目前按下的是向右方向鍵，移動 Red 往右
+	case GLUT_KEY_RIGHT:		// 目前按下的是向右方向鍵
 		
 		break;
-	case GLUT_KEY_UP:		// 目前按下的是向右方向鍵，移動 Red 往右
+	case GLUT_KEY_UP:		// 目前按下的是向右方向鍵
 		
 		break;
-	case GLUT_KEY_DOWN:		// 目前按下的是向右方向鍵，移動 Red 往右
+	case GLUT_KEY_DOWN:		// 目前按下的是向右方向鍵
 		
 		break;
 	default:
