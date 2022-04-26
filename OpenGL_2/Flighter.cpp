@@ -105,14 +105,20 @@ bool _bSetTrace[5][5] = { false };
 //for 3-2
 CFlighter* g_UpgradeOne[2];
 CFlighter* g_UpgradeTwo;
+CFlighter* g_UpgradeThree;
 float g_fUpgradeOne[2][3];
 float g_fUpgradeTwo[3];
+float g_fUpgradeThree[3];
 float _fGearClock = 0;
 float _fColdClock = 0;
 float _fGearAngle = 0;
+float _fTraceClock = 0;
+float _fTraceCold = 0;
 bool _bUpgrade[3] = { false };
 bool _bUseGear = false;
 bool _bGearCold = false;
+bool _bUseTrace = false;
+bool _bTraceCold = false;
 //for 3-2 eat something change
 CFlighter* g_ChangeEat[3];
 float g_fChangeEat[3][3];
@@ -196,6 +202,9 @@ void GL_Display(void)
 				}
 				break;
 			case 2:
+				if (_fChangeClock == 0) {
+					g_UpgradeThree->draw(4);
+				}
 				break;
 			}
 		}
@@ -206,7 +215,7 @@ void GL_Display(void)
 		}
 		for (int j = 0; j < g_Enemy[i]->_iOut; j++) {
 			if (!g_Enemy[i]->_bAttackOut) {
-				if(g_Enemy[i]!=nullptr)
+				if(g_Enemy[i]!=nullptr && !g_Enemy[i]->_bAttackSus[j])
 					g_Enemy[i]->g_Attack[j]->draw(7);
 				//printf("%d:%d draw\n", i, j);
 			}
@@ -219,7 +228,7 @@ void GL_Display(void)
 		}
 		for (int j = 0; j < g_Enemy_S[i]->_iOut; j++) {
 			if (!g_Enemy_S[i]->_bAttackOut) {
-				if (g_Enemy_S[i] != nullptr && g_Enemy_S[i]->g_Attack[j] != nullptr)
+				if (g_Enemy_S[i] != nullptr && g_Enemy_S[i]->g_Attack[j] != nullptr && !g_Enemy_S[i]->_bAttackSus[j])
 					g_Enemy_S[i]->g_Attack[j]->draw(7);
 				//printf("%d:%d draw\n", i, j);
 			}
@@ -232,7 +241,7 @@ void GL_Display(void)
 		}
 		for (int j = 0; j < g_Enemy_T[i]->_iOut; j++) {
 			if (!g_Enemy_T[i]->_bAttackOut) {
-				if (g_Enemy_T[i] != nullptr && g_Enemy_T[i]->g_Attack[j] != nullptr)
+				if (g_Enemy_T[i] != nullptr && g_Enemy_T[i]->g_Attack[j] != nullptr && !g_Enemy_T[i]->_bAttackSus[j])
 					g_Enemy_T[i]->g_Attack[j]->draw(7);
 				//printf("%d:%d draw\n", i, j);
 			}
@@ -262,6 +271,9 @@ void onFrameMove(float delta)
 	if (CountTime > 15.0f && g_bGenerate[1] == false) {
 		EatChange_Generate(1);
 	}
+	if (CountTime > 30.0f && g_bGenerate[2] == false) {
+		EatChange_Generate(2);
+	}
 	for (int i = 0; i < 3; i++) {
 		if (g_ChangeEat[i] == nullptr) break;
 		if (g_bGenerate[i] && G_bGenDel[i] == false) {
@@ -284,12 +296,19 @@ void onFrameMove(float delta)
 					_bUpgrade[i] = true;
 				}
 			break;
+			case 2:
+				if (g_ChangeEat[i]->CheckCollider(g_Player[0]->getPos().x, g_Player[0]->getPos().y, 0.4f)) {
+					G_bGenDel[i] = true;
+					delete g_ChangeEat[i];
+					_bUpgrade[i] = true;
+				}
+				break;
 			}
 			
 		}
 	}
 	//use gear
-	if (_bUseGear) {
+	if (_bUseGear && !_bGearCold) {
 		mat4 mxR , mxT;
 		_fGearClock += delta;
 		if (_fGearClock < 5.0f) {
@@ -501,6 +520,15 @@ void CreateQuadRelationship()
 	g_UpgradeTwo->setTRSMatrix(mxUT);
 	g_UpgradeTwo->setPos(vec3(g_fUpgradeTwo[0], g_fUpgradeTwo[1], g_fUpgradeTwo[2]));
 	g_UpgradeTwo->setShader(g_mxModelView, g_mxProjection, 8);
+	//for flighter upgrade three 3-2
+	g_UpgradeThree = new CFlighter(4);
+	vColor = vec4(0.8, 0.5, 0, 1);
+	g_UpgradeThree->setColor(vColor, 4);
+	g_fUpgradeThree[0] = -0.8f; g_fUpgradeThree[1] = -1.0f; g_fUpgradeThree[2] = 0;
+	mxUT = Translate(g_fUpgradeThree[0], g_fUpgradeThree[1], g_fUpgradeThree[2]);
+	g_UpgradeThree->setTRSMatrix(mxUT);
+	g_UpgradeThree->setPos(vec3(g_fUpgradeThree[0], g_fUpgradeThree[1], g_fUpgradeThree[2]));
+	g_UpgradeThree->setShader(g_mxModelView, g_mxProjection, 4);
 	//for fivestar create
 	g_FiveStar = new CFlighter(4);
 	vColor = vec4(0.11,0.25, 0.51, 1);
@@ -544,7 +572,10 @@ void ProtectRotation(float delta) {
 	if (g_fFAngle > 360.0) g_fFAngle -= 360;
 	else if (g_fFAngle < 0.0) g_fFAngle += 360.0;
 	mxR = RotateZ(g_fFAngle);
-	g_FiveStar->setPos(vec3((g_fFiveStar[0])* mxR._m->x+ g_Player[0]->getPos().x, -(g_fFiveStar[1] * mxR._m->y + g_Player[0]->getPos().y),0));
+	float x = g_Player[0]->getPos().x-(mxGT * g_Flightercenter * g_initmxS[0] * mxR * g_finitmxT)._m->x ;
+	float y = (mxGT * g_Flightercenter * g_initmxS[0] * mxR * g_finitmxT)._m->y + g_Player[0]->getPos().y;
+	g_FiveStar->setPos(vec3(x,y,0));
+	
 	g_FiveStar->setTRSMatrix( mxGT  * g_Flightercenter * g_initmxS[0] * mxR * g_finitmxT);
 }
 //---------------------------------------------------------------------------------------------------------------------
@@ -769,9 +800,11 @@ void Attack(float delta,int i,Enemy* Enemy,int type) {
 						Enemy->g_AttackInitPos[l][0] = Enemy->g_AttackInitPos[l + 1][0];
 						Enemy->g_AttackInitPos[l][1] = Enemy->g_AttackInitPos[l + 1][1];
 						Enemy->g_Attack[l] = Enemy->g_Attack[l + 1];
+						Enemy->_bAttackSus[l] = Enemy->_bAttackSus[l + 1];
 						Enemy->g_Attack[l]->setPos(vec3(Enemy->g_AttackInitPos[l][0] + g_fTraceDir[l][0] * -Enemy->g_fAttackDir[l], Enemy->g_AttackInitPos[l][1] + g_fTraceDir[l][1] * -Enemy->g_fAttackDir[l], 0));
 					}
 					Enemy->g_fAttackDir[Enemy->_iOut - 1] = 0;
+					Enemy->_bAttackSus[Enemy->_iOut - 1] = false;
 					Enemy->_iOut--;
 				}
 				break;
@@ -783,9 +816,11 @@ void Attack(float delta,int i,Enemy* Enemy,int type) {
 						Enemy->g_AttackInitPos[l][0] = Enemy->g_AttackInitPos[l + 1][0];
 						Enemy->g_AttackInitPos[l][1] = Enemy->g_AttackInitPos[l + 1][1];
 						Enemy->g_Attack[l] = Enemy->g_Attack[l + 1];
+						Enemy->_bAttackSus[l] = Enemy->_bAttackSus[l + 1];
 						Enemy->g_Attack[l]->setPos(vec3(Enemy->g_AttackInitPos[l][0], Enemy->g_AttackInitPos[l][1] + Enemy->g_fAttackDir[l] * Enemy->_fAttackSpeed, 0));
 					}
 					Enemy->g_fAttackDir[Enemy->_iOut - 1] = 0;
+					Enemy->_bAttackSus[Enemy->_iOut - 1] = false;
 					Enemy->_iOut--;
 				}
 				break;
@@ -797,12 +832,14 @@ void Attack(float delta,int i,Enemy* Enemy,int type) {
 						Enemy->g_AttackInitPos[l][0] = Enemy->g_AttackInitPos[l + 1][0];
 						Enemy->g_AttackInitPos[l][1] = Enemy->g_AttackInitPos[l + 1][1];
 						Enemy->g_Attack[l] = Enemy->g_Attack[l + 1];
+						Enemy->_bAttackSus[l] = Enemy->_bAttackSus[l + 1];
 						g_fTraceDir[l][0] = g_fTraceDir[l + 1][0];
 						g_fTraceDir[l][1] = g_fTraceDir[l + 1][1];
 						_bSetTrace[i][l] = _bSetTrace[i][l + 1];
 						Enemy->g_Attack[l]->setPos(vec3(Enemy->g_AttackInitPos[l][0], Enemy->g_AttackInitPos[l][1] + Enemy->g_fAttackDir[l] * Enemy->_fAttackSpeed, 0));
 					}
 					Enemy->g_fAttackDir[Enemy->_iOut - 1] = 0;
+					Enemy->_bAttackSus[Enemy->_iOut - 1] = false;
 					_bSetTrace[i][Enemy->_iOut - 1] = false;
 					Enemy->_iOut--;
 				}
@@ -827,13 +864,13 @@ void Attack(float delta,int i,Enemy* Enemy,int type) {
 				_bAttack = g_Player[0]->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y, 1.5);
 				//protecy player
 				// 
-				//_bDefend = g_FiveStar->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y, 1);
+				_bDefend = g_FiveStar->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y, 1.0f);
 				//printf("(%f,%f),(%f,%f)\n", g_FiveStar->getPos().x, g_FiveStar->getPos().y, g_Player[0]->getPos().x, g_Player[0]->getPos().y);
-				//if (_bDefend) {
-				//	Enemy->_bAttackSus[j] = true;
-				//	printf("Defend\n");
-				//}
-				if (_bAttack && !_bAttacked) {
+				if (_bDefend) {
+					Enemy->_bAttackSus[j] = true;
+					printf("1Defend\n");
+				}
+				if (_bAttack && !_bAttacked && !Enemy->_bAttackSus[j]) {
 					printf("Attack\n");
 					Enemy->_bAttackSus[j] = true;
 					_bAttacked = true;
@@ -854,13 +891,13 @@ void Attack(float delta,int i,Enemy* Enemy,int type) {
 				_bAttack = g_Player[0]->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y, 1.5);
 				//protecy player
 				// 
-				//_bDefend = g_FiveStar->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y, 1);
+				_bDefend = g_FiveStar->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y , 1.0f);
 				//printf("(%f,%f),(%f,%f)\n", g_FiveStar->getPos().x, g_FiveStar->getPos().y, g_Player[0]->getPos().x, g_Player[0]->getPos().y);
-				//if (_bDefend) {
-				//	Enemy->_bAttackSus[j] = true;
-				//	printf("Defend\n");
-				//}
-				if (_bAttack && !_bAttacked) {
+				if (_bDefend) {
+					Enemy->_bAttackSus[j] = true;
+					printf("2Defend\n");
+				}
+				if (_bAttack && !_bAttacked && !Enemy->_bAttackSus[j]) {
 					printf("Attack\n");
 					Enemy->_bAttackSus[j] = true;
 					_bAttacked = true;
@@ -882,13 +919,13 @@ void Attack(float delta,int i,Enemy* Enemy,int type) {
 				_bAttack = g_Player[0]->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y, 1.5);
 				//protecy player
 				// 
-				//_bDefend = g_FiveStar->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y, 1);
+				_bDefend = g_FiveStar->CheckCollider(Enemy->g_Attack[j]->getPos().x, Enemy->g_Attack[j]->getPos().y , 1.0f);
 				//printf("(%f,%f),(%f,%f)\n", g_FiveStar->getPos().x, g_FiveStar->getPos().y, g_Player[0]->getPos().x, g_Player[0]->getPos().y);
-				//if (_bDefend) {
-				//	Enemy->_bAttackSus[j] = true;
-				//	printf("Defend\n");
-				//}
-				if (_bAttack && !_bAttacked) {
+				if (_bDefend) {
+					Enemy->_bAttackSus[j] = true;
+					printf("3Defend\n");
+				}
+				if (_bAttack && !_bAttacked && !Enemy->_bAttackSus[j]) {
 					printf("Attack\n");
 					Enemy->_bAttackSus[j] = true;
 					_bAttacked = true;
@@ -978,6 +1015,7 @@ void Win_Mouse(int button, int state, int x, int y) {
 	switch (button) {
 	case GLUT_LEFT_BUTTON:   // 目前按下的是滑鼠左鍵
 		if (state == GLUT_DOWN && _bUpgrade[1] && !_bUseGear) {
+			if(_bUpgrade[1] && !_bUseGear && !_bGearCold)
 			_bUseGear = true;
 		}
 		break;
@@ -1007,12 +1045,15 @@ void Win_PassiveMotion(int x, int y) {
 		mxT = Translate(g_fUpgradeOne[i][0], g_fUpgradeOne[i][1], g_fUpgradeOne[i][2]);
 		g_UpgradeOne[i]->setTRSMatrix(mxT * mxGT);
 	}
-	if (!_bUseGear) {
+	if (!_bUseGear || _fColdClock == 0.0f) {
 		mxT = Translate(g_fUpgradeTwo[0], g_fUpgradeTwo[1], g_fUpgradeTwo[2]);
 		g_UpgradeTwo->setTRSMatrix(mxT * mxGT);
 		g_UpgradeTwo->setPos(vec3(g_fUpgradeTwo[0] + g_fTx, g_fUpgradeTwo[1] + g_fTy, g_fUpgradeTwo[2]));
-		g_Player[0]->setPos(vec3(-0.8f + g_fTx, -1.4f + g_fTy, 0.0f));
 	}
+	mxT = Translate(g_fUpgradeThree[0], g_fUpgradeThree[1], g_fUpgradeThree[2]);
+	g_UpgradeThree->setTRSMatrix(mxT * mxGT);
+	g_UpgradeThree->setPos(vec3(g_fUpgradeThree[0] + g_fTx, g_fUpgradeThree[1] + g_fTy, g_fUpgradeThree[2]));
+	g_Player[0]->setPos(vec3(-0.8f + g_fTx, -1.4f + g_fTy, 0.0f));
 
 }
 // The motion callback for a window is called when the mouse moves within the window while one or more mouse buttons are pressed.
