@@ -42,7 +42,9 @@ float g_fFiveStar[3];
 mat4 g_finitmxT;
 GLfloat g_fFAngle = 0;
 GLfloat g_fFDir = 1;
-
+float g_fTraceInitPos[2];
+float g_fTraceColdClock=0;
+bool _bTraceAttackSus = false;
 //for missile
 CFlighter* g_Missile[20];
 float g_fMissile[20][3];
@@ -267,6 +269,11 @@ void GL_Display(void)
 	}
 	if (_bBossGen) {
 		g_Boss[0]->draw();
+		if (_bSecondDied) {
+			for (int j = 0; j < g_Boss[0]->_iOut; j++) {
+				g_Boss[0]->g_Attack[j]->draw(7);
+			}
+		}
 		if (_iBossType == 1) {
 			for (int i = 5; i < 9; i++) {
 				g_Boss[i]->draw();
@@ -289,7 +296,10 @@ void GL_Display(void)
 		}
 
 	}
-	g_FiveStar->draw(4);
+	if (!_bTraceAttackSus) {
+		g_FiveStar->draw(4);
+	}
+
 	glutSwapBuffers();	// 交換 Frame Buffer
 }
 
@@ -564,6 +574,9 @@ void onFrameMove(float delta)
 			g_fSecondDiedPos[0] = g_Boss[0]->getPos().x;
 			g_fSecondDiedPos[1] = g_Boss[0]->getPos().y;
 		}
+		if (_bSecondDied) {
+			Attack(delta, 0, g_Boss[0], 3);
+		}
 		if (_iBossType == 1 && !_bFirstDied) {
 			for (int i = 5; i < 9; i++) {
 				Attack(delta, i, g_Boss[i], 2);
@@ -578,7 +591,14 @@ void onFrameMove(float delta)
 	if (_fShootDur >= 3.5f) {
 		_fShootDur = 0.5f;
 	}
-	
+	if (_bTraceAttackSus) {
+		g_fTraceColdClock += delta;
+		if (g_fTraceColdClock > 5.0f) {
+			_bUseTrace = false;
+			_bTraceAttackSus = false;
+			g_fTraceColdClock = 0;
+		}
+	}
 	GL_Display();
 }
 
@@ -717,16 +737,22 @@ void ProtectRotation(float delta) {
 	float x = g_Player[0]->getPos().x-(mxGT * g_Flightercenter * g_initmxS[0] * mxR * g_finitmxT)._m->x ;
 	float y = (mxGT * g_Flightercenter * g_initmxS[0] * mxR * g_finitmxT)._m->y + g_Player[0]->getPos().y;
 	g_FiveStar->setPos(vec3(x,y,0));
-	
 	g_FiveStar->setTRSMatrix( mxGT  * g_Flightercenter * g_initmxS[0] * mxR * g_finitmxT);
 }
 void TraceAttack(float delta) {
 	mat4 mxT;
-	_fTraceCount += delta;
-	_fTraceDir[0] = g_Player[0]->getPos().x - g_FiveStar->getPos().x;
-	_fTraceDir[1] = g_Player[0]->getPos().y - g_FiveStar->getPos().y;
-	mxT = Translate(g_FiveStar->getPos().x + _fTraceDir[0] * _fTraceCount, g_FiveStar->getPos().y + _fTraceDir[1] * _fTraceCount, 0);
-	g_FiveStar->setTRSMatrix(mxT);
+	if (!_bTraceAttackSus) {
+		_fTraceCount += delta;
+		_fTraceDir[0] = g_Boss[0]->getPos().x - g_fTraceInitPos[0];
+		_fTraceDir[1] = g_Boss[0]->getPos().y - g_fTraceInitPos[1];
+		mxT = Translate(g_fTraceInitPos[0] + _fTraceDir[0] * _fTraceCount, g_fTraceInitPos[1] + _fTraceDir[1] * _fTraceCount, 0);
+		g_FiveStar->setTRSMatrix(mxT);
+		g_FiveStar->setPos(vec3(g_fTraceInitPos[0] + _fTraceDir[0] * _fTraceCount, g_fTraceInitPos[1] + _fTraceDir[1] * _fTraceCount, 0));
+	}
+	if (g_Boss[0]->CheckCollider(g_FiveStar->getPos().x, g_FiveStar->getPos().y,0.5f)) {
+		_bTraceAttackSus = true;
+		_fTraceCount = 0.0f;
+	}
 }
 //---------------------------------------------------------------------------------------------------------------------
 //1-3 1-4
@@ -1139,8 +1165,18 @@ void BossMove(float delta,int type) {
 	}
 	mxS = Scale(s, s, 1);
 	mxCT = Translate(g_fBoss[0][0], g_fBoss[0][1], g_fBoss[0][2]);
-	g_Boss[0]->setTRSMatrix(mxCT*mxS);
-	g_Boss[0]->setPos(vec3(g_fBoss[0][0], g_fBoss[0][1], g_fBoss[0][2]));
+	if (_bSecondDied) {
+		mxR = RotateZ(RotateCount * 180*5);
+		g_Boss[0]->_fAttackDur = 0.5f;
+		g_Boss[0]->setTRSMatrix(mxCT *mxR* mxS);
+		vec4 vColor = vec4(s, s, 0.5, 1);
+		g_Boss[0]->setColor(vColor);
+		g_Boss[0]->setPos(vec3(g_fBoss[0][0]+ mxR._m->x, g_fBoss[0][1]+ mxR._m->y, g_fBoss[0][2]));
+	}
+	else {
+		g_Boss[0]->setTRSMatrix(mxCT * mxS);
+		g_Boss[0]->setPos(vec3(g_fBoss[0][0], g_fBoss[0][1], g_fBoss[0][2]));
+	}
 	if ((type == 1 || type == 2) && !_bSecondDied) {
 		for (int i = 1; i < 5; i++) {
 			mxT = Translate(g_fBoss[i][0], g_fBoss[i][1], g_fBoss[i][2]);
@@ -1341,9 +1377,10 @@ void Win_Mouse(int button, int state, int x, int y) {
 		break;
 	case GLUT_RIGHT_BUTTON:   // 目前按下的是滑鼠右鍵
 		if (state == GLUT_DOWN) {
-			if (_bUpgrade[2] && !_bTraceCold) {
+			if (_bUpgrade[2] && !_bTraceCold && !_bUseTrace) {
 				_bUseTrace = true;
-
+				g_fTraceInitPos[0] = g_FiveStar->getPos().x;
+				g_fTraceInitPos[1] = g_FiveStar->getPos().y;
 			}
 		}
 		
